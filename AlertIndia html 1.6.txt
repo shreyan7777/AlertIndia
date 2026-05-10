@@ -1,0 +1,2757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Permissions-Policy" content="geolocation=*"/>
+<title>AlertIndia — Earliest Warning System</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+/* ── ROOT & GRID BACKGROUND ── */
+:root {
+  --navy: #050c1a;
+  --card: #0b1628;
+  --border: #1a2d45;
+  --border2: #0e2038;
+  --cyan: #00c6ff;
+  --cyan2: #0083b0;
+  --green: #00e5a0;
+  --amber: #f5a623;
+  --red: #ff4757;
+  --purple: #a855f7;
+  --orange: #ff6b35;
+  --text: #cdd9f0;
+  --muted: #4a6080;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background-color: var(--navy);
+  background-image:
+    linear-gradient(rgba(0,198,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,198,255,.04) 1px, transparent 1px),
+    linear-gradient(rgba(0,198,255,.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,198,255,.015) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px;
+  color: var(--text);
+  min-height: 100vh;
+}
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0,198,255,.03) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* ── PULSE DOTS ── */
+.pulse-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  animation: pulseAnim 1.6s infinite;
+  flex-shrink: 0;
+}
+@keyframes pulseAnim { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.4)} }
+
+/* ── PROGRESS BAR ── */
+.progress-track {
+  height: 6px; border-radius: 4px;
+  background: rgba(255,255,255,.08);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 4px;
+  transition: width 1s ease;
+}
+
+/* ── BADGE ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: .65rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; padding: 2px 8px; border-radius: 100px;
+}
+.badge-high   { background: rgba(255,71,87,.15);  border: 1px solid rgba(255,71,87,.4);  color: var(--red); }
+.badge-med    { background: rgba(245,166,35,.12); border: 1px solid rgba(245,166,35,.35); color: var(--amber); }
+.badge-low    { background: rgba(0,229,160,.12);  border: 1px solid rgba(0,229,160,.3);  color: var(--green); }
+.badge-purple { background: rgba(168,85,247,.12); border: 1px solid rgba(168,85,247,.3); color: var(--purple); }
+
+/* ── GLOWING BORDERS ── */
+.glow-red    { box-shadow: 0 0 0 1px rgba(255,71,87,.25), inset 0 0 30px rgba(255,71,87,.03); }
+.glow-amber  { box-shadow: 0 0 0 1px rgba(245,166,35,.25), inset 0 0 30px rgba(245,166,35,.03); }
+.glow-cyan   { box-shadow: 0 0 0 1px rgba(0,198,255,.25), inset 0 0 30px rgba(0,198,255,.03); }
+.glow-purple { box-shadow: 0 0 0 1px rgba(168,85,247,.25), inset 0 0 30px rgba(168,85,247,.03); }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 2rem; left: 50%;
+  transform: translateX(-50%) translateY(120px);
+  background: var(--card); border: 1px solid var(--border);
+  padding: .65rem 1.4rem; border-radius: 100px;
+  font-size: .82rem; z-index: 999; transition: transform .3s ease;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: rgba(0,229,160,.4); color: var(--green); }
+.toast.error   { border-color: rgba(255,71,87,.4);  color: var(--red); }
+
+/* ── SPINNER ── */
+.spinner {
+  width: 13px; height: 13px;
+  border: 2px solid rgba(255,255,255,.25); border-top-color: #fff;
+  border-radius: 50%; animation: spin .8s linear infinite;
+  display: inline-block; vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg) } }
+
+/* ── BUTTONS ── */
+.btn-primary {
+  background: linear-gradient(135deg, var(--cyan2), var(--cyan));
+  color: #fff; font-weight: 700; font-size: .85rem;
+  transition: all .2s; cursor: pointer; border: none;
+}
+.btn-primary:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,198,255,.3); }
+.btn-primary:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.btn-ghost {
+  background: rgba(0,198,255,.1); border: 1px solid rgba(0,198,255,.3);
+  color: var(--cyan); font-weight: 600; font-size: .82rem;
+  transition: all .2s; cursor: pointer;
+}
+.btn-ghost:hover:not(:disabled) { background: rgba(0,198,255,.2); }
+
+/* ── STARS ── */
+.star { cursor: pointer; font-size: 1.6rem; color: var(--border); transition: all .15s; }
+.star.active, .star:hover { color: var(--amber); transform: scale(1.2); }
+
+/* ── STAT CARD ANIMATION ── */
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:none } }
+.fade-up { animation: fadeUp .5s ease both; }
+
+/* ── SCAN LINE EFFECT ── */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+.scanline {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(transparent, rgba(0,198,255,.06), transparent);
+  pointer-events: none; z-index: 9999;
+  animation: scanline 8s linear infinite;
+}
+
+/* ── SEARCH ── */
+.search-wrap input {
+  background: rgba(11,22,40,.8); border: 1px solid var(--border);
+  color: var(--text); outline: none; transition: border-color .2s;
+}
+.search-wrap input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,198,255,.08); }
+.search-wrap input::placeholder { color: var(--muted); }
+
+/* ── RISK CARD HEADER ACCENT ── */
+.risk-card-flood   { border-top: 2px solid var(--cyan); }
+.risk-card-heat    { border-top: 2px solid var(--orange); }
+.risk-card-aqi     { border-top: 2px solid var(--purple); }
+.risk-card-rain    { border-top: 2px solid #38bdf8; }
+.risk-card-drone   { border-top: 2px solid var(--red); }
+
+/* ── ACTIVE ALERT PULSE ── */
+@keyframes alertPulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,71,87,.4)} 50%{box-shadow:0 0 0 8px rgba(255,71,87,0)} }
+.alert-pulse { animation: alertPulse 2s infinite; }
+
+/* ════════════════════════════════════
+   HERO — large screen layout
+════════════════════════════════════ */
+.hero-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(0,198,255,.08); border: 1px solid rgba(0,198,255,.3);
+  border-radius: 100px; padding: 5px 14px;
+  font-size: .75rem; font-weight: 600; color: var(--cyan);
+  margin-bottom: 1.1rem;
+}
+.hero-h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(2.2rem, 5vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.12;
+  color: #ffffff;
+  margin-bottom: .4rem;
+}
+.hero-h1 .accent { color: var(--cyan); }
+.hero-sub {
+  font-size: .9rem; color: var(--muted);
+  margin-bottom: 1.8rem;
+}
+
+/* stat strip — 7 equal cards on desktop */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 12px 10px;
+  position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content:''; position:absolute; inset:0;
+  background: linear-gradient(135deg,rgba(0,198,255,.03) 0%,transparent 60%);
+  pointer-events:none;
+}
+.stat-label {
+  font-family:'JetBrains Mono',monospace;
+  font-size: .6rem; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--muted);
+  margin-bottom: 6px;
+}
+.stat-val {
+  font-family:'JetBrains Mono',monospace;
+  font-size: 1.35rem; font-weight: 700;
+  line-height: 1;
+}
+.stat-unit {
+  font-family:'JetBrains Mono',monospace;
+  font-size: .62rem; color: var(--muted);
+  margin-top: 2px;
+}
+.live-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: .68rem; color: var(--green);
+  margin-top: 4px;
+}
+
+/* ── LOCATION SEARCH BAR (hero) ── */
+.hero-search-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 1.4rem;
+}
+.hero-search-label {
+  font-size: .65rem; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+}
+.hero-search-row {
+  display: flex; gap: 10px; align-items: center;
+}
+.hero-search-input {
+  flex: 1;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 16px 11px 40px;
+  font-size: .9rem; color: var(--text);
+  outline: none; transition: border-color .2s;
+  font-family: 'Space Grotesk', sans-serif;
+  position: relative;
+}
+.hero-search-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,198,255,.08); }
+.hero-search-input::placeholder { color: var(--muted); }
+.hero-search-icon {
+  position: absolute; left: 12px;
+  top: 50%; transform: translateY(-50%);
+  font-size: 1rem; pointer-events: none;
+}
+.hero-search-field { position: relative; flex: 1; }
+.hero-search-btn-loc {
+  background: rgba(0,198,255,.1);
+  border: 1px solid rgba(0,198,255,.3);
+  border-radius: 10px;
+  padding: 10px 18px;
+  color: var(--cyan); font-weight: 600; font-size: .82rem;
+  cursor: pointer; transition: all .2s;
+  display: flex; align-items: center; gap: 7px;
+  white-space: nowrap;
+}
+.hero-search-btn-loc:hover { background: rgba(0,198,255,.2); }
+.hero-search-btn-go {
+  background: linear-gradient(135deg, var(--cyan2), var(--cyan));
+  border: none; border-radius: 10px;
+  padding: 10px 24px;
+  color: #fff; font-weight: 700; font-size: .9rem;
+  cursor: pointer; transition: all .2s;
+  white-space: nowrap;
+}
+.hero-search-btn-go:hover { opacity: .88; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,198,255,.3); }
+
+/* ── HAZARD FILTER TABS ── */
+.hazard-tabs {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 0;
+}
+.hazard-tab {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 15px; border-radius: 100px;
+  font-size: .78rem; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+  border: 1px solid var(--border);
+  background: transparent; color: var(--muted);
+  white-space: nowrap;
+}
+.hazard-tab.active {
+  background: rgba(0,198,255,.15);
+  border-color: rgba(0,198,255,.5);
+  color: var(--cyan);
+}
+.hazard-tab:not(.active):hover {
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+}
+
+/* ── HOW IT WORKS STEPS ── */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.step-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px 18px;
+}
+.step-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .62rem; font-weight: 600;
+  letter-spacing: .15em; text-transform: uppercase;
+  color: var(--cyan); margin-bottom: 10px;
+}
+.step-icon { font-size: 1.6rem; margin-bottom: 10px; }
+.step-title { font-weight: 700; font-size: .9rem; margin-bottom: 6px; color: var(--text); }
+.step-desc { font-size: .78rem; color: var(--muted); line-height: 1.5; }
+
+/* ── SENTINEL SECTION ── */
+.sentinel-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+}
+.sentinel-left { display: flex; align-items: flex-start; gap: 12px; }
+.sentinel-icon { font-size: 1.4rem; margin-top: 2px; }
+.sentinel-title {
+  font-weight: 700; font-size: 1rem;
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 4px;
+}
+.sentinel-desc { font-size: .8rem; color: var(--muted); max-width: 520px; line-height: 1.5; }
+.sentinel-arm-btn {
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-weight: 700; font-size: .85rem;
+  color: var(--text); cursor: pointer;
+  transition: all .2s; white-space: nowrap;
+  display: flex; align-items: center; gap: 8px;
+}
+.sentinel-arm-btn:hover { background: rgba(255,255,255,.1); }
+
+/* ════════════════════════════════════
+   RESPONSIVE — MOBILE (≤ 640px)
+════════════════════════════════════ */
+@media (max-width: 640px) {
+  /* stat strip: 2 cols on mobile */
+  .stat-strip {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  /* last stat (updated) — full width on 2col */
+  .stat-strip .stat-card:last-child {
+    grid-column: 1 / -1;
+  }
+  .hero-h1 { font-size: 2rem; }
+  .hero-search-row { flex-direction: column; gap: 8px; }
+  .hero-search-btn-loc,
+  .hero-search-btn-go { width: 100%; justify-content: center; }
+  .hazard-tabs { gap: 6px; }
+  .hazard-tab { padding: 6px 11px; font-size: .72rem; }
+  .steps-grid { grid-template-columns: 1fr; }
+  .sentinel-section { flex-direction: column; align-items: flex-start; }
+  .sentinel-arm-btn { width: 100%; justify-content: center; }
+.risk-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  /* header search hidden on mobile – use hero search instead */
+  .header-search { display: none !important; }
+
+  /* ── WOMEN SAFETY MODAL on mobile ── */
+  #ws-modal-overlay { align-items: flex-end !important; }
+  #ws-modal-overlay > div {
+    width: 100% !important; max-width: 100% !important;
+    max-height: 92vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 20px 16px 30px !important;
+  }
+  #ws-modal-overlay > div::before {
+    content:''; display:block; width:40px; height:4px;
+    background:rgba(255,255,255,.2); border-radius:2px; margin:0 auto 14px;
+  }
+  .ws-btn-danger { font-size:.88rem; padding:14px; }
+  #ws-add-row { flex-direction: column; }
+  #ws-add-row input { width: 100% !important; }
+}
+
+/* mid breakpoint — tablet */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .stat-strip { grid-template-columns: repeat(4, 1fr); }
+  .steps-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── ACTIVE ALERTS LABEL ── */
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; font-weight: 600;
+  letter-spacing: .15em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-label::after {
+  content: ''; flex: 1; height: 1px;
+  background: var(--border);
+}
+/* SENTINEL 3D */
+.sentinel-3d-wrap {
+  perspective: 600px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 130px;
+  margin: 8px 0;
+  cursor: crosshair;
+}
+#satellite-3d:hover {
+  filter: drop-shadow(0 0 18px rgba(168,85,247,0.9)) !important;
+}
+#antenna-group {
+  transform-origin: 60px 28px;
+  transition: transform 0.12s ease;
+}
+.signal-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid rgba(168,85,247,0.6);
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%) scale(0);
+  animation: none;
+  pointer-events: none;
+}
+.signal-ring.ring1 { width: 60px;  height: 60px; }
+.signal-ring.ring2 { width: 90px;  height: 90px; animation-delay: .3s; }
+.signal-ring.ring3 { width: 120px; height: 120px; animation-delay: .6s; }
+@keyframes pulse-ring {
+  0%   { transform: translate(-50%,-50%) scale(0); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(1); opacity: 0; }
+}
+.armed .signal-ring {
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+@keyframes mpulse {
+  0%   { transform:scale(0.2); opacity:1; }
+  100% { transform:scale(1);   opacity:0; }
+}
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+<div id="toast" class="toast"></div>
+
+<!-- ═══════════════════ HEADER ═══════════════════ -->
+<header class="sticky top-0 z-50 backdrop-blur-xl" style="background:rgba(5,12,26,.92);border-bottom:1px solid var(--border)">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+    <!-- Logo -->
+    <div class="flex items-center gap-2.5 flex-shrink-0">
+      <div class="pulse-dot" style="background:var(--cyan);box-shadow:0 0 10px var(--cyan)"></div>
+      <span class="mono font-semibold text-base tracking-tight" style="color:var(--cyan)">Alert<span style="color:var(--text)">India</span></span>
+      <span class="badge badge-low hidden sm:inline-flex">v2.0</span>
+    </div>
+
+    <!-- Header Search Bar (hidden on mobile — use hero search) -->
+    <div class="search-wrap header-search flex items-center gap-2 flex-1 max-w-md">
+      <div class="flex-1 relative">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style="color:var(--muted)">🔍</span>
+        <input id="location-search" type="text" placeholder="Search city or district…"
+               class="w-full pl-9 pr-4 py-2 rounded-lg text-sm" onkeydown="if(event.key==='Enter') searchByName(this.value)"/>
+      </div>
+      <button id="use-location-btn" class="btn-ghost px-3 py-2 rounded-lg text-xs flex items-center gap-1.5 flex-shrink-0">
+        <span id="loc-btn-icon">📍</span>
+        <span class="hidden sm:inline">My Location</span>
+      </button>
+    </div>
+
+    <!-- Live badge -->
+    <div class="flex items-center gap-1.5 text-xs flex-shrink-0" style="color:var(--green);border:1px solid rgba(0,229,160,.25);background:rgba(0,229,160,.08);padding:4px 10px;border-radius:100px">
+      <div class="pulse-dot" style="background:var(--green)"></div>
+      <span class="hidden sm:inline">Live</span>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+
+  <!-- ═══════════════════ HERO ═══════════════════ -->
+  <section class="mb-8 fade-up">
+
+    <!-- Pill -->
+    <div class="hero-pill">
+      <span>⚡</span>
+      <span>First to alert.</span>
+      <span style="color:var(--text);font-weight:400">Before it reaches you.</span>
+    </div>
+
+    <!-- Headline -->
+    <h1 class="hero-h1">
+      Know the danger<br/>
+      <span class="accent">before it arrives.</span>
+    </h1>
+    <p class="hero-sub">Floods · Heatwaves · Air Quality · Rainfall — earliest warnings for any location in India</p>
+
+    <!-- ── LIVE STATS STRIP ── -->
+    <div class="stat-strip fade-up" style="animation-delay:.05s">
+
+      <!-- TEMPERATURE -->
+      <div class="stat-card">
+        <div class="stat-label">Temperature</div>
+        <div id="live-temp" class="stat-val" style="color:var(--amber)">--°C</div>
+      </div>
+
+      <!-- FEELS LIKE -->
+      <div class="stat-card">
+        <div class="stat-label">Feels Like</div>
+        <div id="live-feels" class="stat-val" style="color:var(--orange)">--°C</div>
+      </div>
+
+      <!-- HUMIDITY -->
+      <div class="stat-card">
+        <div class="stat-label">Humidity</div>
+        <div id="live-humidity" class="stat-val" style="color:var(--cyan)">--%</div>
+      </div>
+
+      <!-- WIND SPEED -->
+      <div class="stat-card">
+        <div class="stat-label">Wind Speed</div>
+        <div id="live-wind" class="stat-val" style="color:var(--green)">--</div>
+        <div class="stat-unit">km/h</div>
+      </div>
+
+      <!-- AIR QUALITY -->
+      <div class="stat-card">
+        <div class="stat-label">Air Quality</div>
+        <div id="live-aqi" class="stat-val" style="color:var(--red)">--</div>
+      </div>
+
+      <!-- LAST UPDATED -->
+      <div class="stat-card">
+        <div class="stat-label">Last Updated</div>
+        <div id="live-updated" class="stat-val" style="color:var(--cyan);font-size:1.1rem">--:--</div>
+        <div class="live-badge">
+          <div class="pulse-dot" style="background:var(--green);width:6px;height:6px"></div>
+          <span id="visitor-count-inline" style="color:var(--muted)">-- live now</span>
+        </div>
+      </div>
+
+      <!-- TOTAL VISITORS -->
+      <div class="stat-card">
+        <div class="stat-label">Total Visitors</div>
+        <div id="visitor-count" class="stat-val" style="color:var(--purple)">--</div>
+        <div class="live-badge" style="color:var(--green)">
+          <div class="pulse-dot" style="background:var(--green);width:6px;height:6px"></div>
+      
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── LOCATION SEARCH ── -->
+    <div class="hero-search-wrap fade-up" style="animation-delay:.15s">
+      <div class="hero-search-label">
+        <span>📍</span> Check any location in India
+      </div>
+      <div class="hero-search-row">
+        <div class="hero-search-field">
+          <span class="hero-search-icon">📌</span>
+          <input id="hero-location-search" type="text" placeholder="Search village, town, city, district…"
+                 class="hero-search-input" onkeydown="if(event.key==='Enter') searchByName()"/>
+        </div>
+       <button id="hero-use-location-btn" class="hero-search-btn-loc" onclick="useMyLocation()">
+          <span id="hero-loc-icon">🎯</span>
+          Use My Location
+        </button>
+        <button class="hero-search-btn-go" onclick="searchByName()">Search</button>
+      </div>
+    </div>
+
+    <!-- ── HAZARD FILTER TABS ── -->
+    <div class="hazard-tabs fade-up" style="animation-delay:.2s">
+      <button class="hazard-tab active">🌐 All Hazards</button>
+      <button class="hazard-tab">🌊 Floods</button>
+      <button class="hazard-tab">🌡️ Heatwaves</button>
+      <button class="hazard-tab">😷 Air Quality</button>
+      <button class="hazard-tab">🌧️ Rainfall</button>
+      <button class="hazard-tab">🛸 Drone Activity</button>
+      <button class="hazard-tab">🚀 Ballistic Watch</button>
+    </div>
+
+  </section>
+
+  <!-- ═══════════════════ RISK CARDS ═══════════════════ -->
+  <section class="mb-10">
+    <div class="flex items-center justify-between mb-4">
+      <div class="section-label" style="flex:1">All active alerts</div>
+      <span id="rating-count-header" class="text-xs ml-4 flex-shrink-0" style="color:var(--muted)">-- community ratings</span>
+    </div>
+
+    <div class="risk-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- FLOOD CARD -->
+      <div class="card risk-card-flood glow-cyan p-5 fade-up" style="animation-delay:.1s;cursor:pointer;" onclick="openAlertModal('🌊','Flood Risk','Kosi River Basin · Bihar','High','<b>River Level:</b> 9.4m / 10m<br><b>Breach Expected:</b> 4–6 hrs<br><b>:</b> 6 hrs early<br><b>Status:</b> DANGER — approaching breach mark')">
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🌊</span>
+            <div>
+              <div class="font-bold text-sm">Flood Risk</div>
+              <div class="text-[10px] mono" style="color:var(--muted)">Kosi River Basin · Bihar</div>
+            </div>
+          </div>
+          <span class="badge badge-high">High</span>
+        </div>
+        <div class="mb-3">
+          <div class="flex justify-between text-xs mb-1">
+            <span style="color:var(--muted)">River Level</span>
+            <span class="mono font-semibold" style="color:var(--cyan)" id="flood-level-text">9.4m / 10m</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:94%;background:linear-gradient(90deg,var(--cyan2),var(--red))"></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-4 text-xs">
+          <div class="rounded-lg p-2" style="background:rgba(0,198,255,.06);border:1px solid rgba(0,198,255,.12)">
+            <div style="color:var(--muted)" class="text-[10px]">Ahead of IMD</div>
+            <div class="font-bold" style="color:var(--cyan)">6 hrs early</div>
+          </div>
+          <div class="rounded-lg p-2" style="background:rgba(255,71,87,.06);border:1px solid rgba(255,71,87,.12)">
+            <div style="color:var(--muted)" class="text-[10px]">Breach Expected</div>
+            <div class="font-bold" style="color:var(--red)">4–6 hrs</div>
+          </div>
+        </div>
+        <button class="first-alert-btn btn-ghost w-full py-2 rounded-lg text-xs"
+                data-type="Flood" data-loc="Kosi River - Supaul Bihar" data-detail="Water at 94% danger mark. Expected breach in 4-6hrs">
+          ⚡ First to Alert — Kosi Valley
+        </button>
+      </div>
+
+      <!-- HEATWAVE CARD -->
+      <div class="card risk-card-heat fade-up" style="animation-delay:.15s;border-top-color:var(--orange);box-shadow:0 0 0 1px rgba(255,107,53,.2),inset 0 0 30px rgba(255,107,53,.03);cursor:pointer;" onclick="openAlertModal('🌡️','Heatwave Alert','Nagpur · Maharashtra','High','<b>Heat Intensity:</b> 47°C / 50°C<br><b>Heat Index:</b> DANGEROUS<br><b>Duration:</b> 48 hrs<br><b>Status:</b> Extreme heat conditions expected')">
+        <div class="p-5">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🌡️</span>
+              <div>
+                <div class="font-bold text-sm">Heatwave Alert</div>
+                <div class="text-[10px] mono" style="color:var(--muted)">Nagpur · Maharashtra</div>
+              </div>
+            </div>
+            <span class="badge badge-high">High</span>
+          </div>
+          <div class="mb-3">
+            <div class="flex justify-between text-xs mb-1">
+              <span style="color:var(--muted)">Heat Intensity</span>
+              <span class="mono font-semibold" style="color:var(--orange)" id="heat-live">47°C / 50°C</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width:94%;background:linear-gradient(90deg,var(--amber),var(--orange))"></div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mb-4 text-xs">
+            <div class="rounded-lg p-2" style="background:rgba(255,107,53,.06);border:1px solid rgba(255,107,53,.12)">
+              <div style="color:var(--muted)" class="text-[10px]">Heat Index</div>
+              <div class="font-bold" style="color:var(--orange)">DANGEROUS</div>
+            </div>
+            <div class="rounded-lg p-2" style="background:rgba(245,166,35,.06);border:1px solid rgba(245,166,35,.12)">
+              <div style="color:var(--muted)" class="text-[10px]">Duration</div>
+              <div class="font-bold" style="color:var(--amber)">48 hrs</div>
+            </div>
+          </div>
+          <button class="first-alert-btn btn-ghost w-full py-2 rounded-lg text-xs" style="color:var(--orange);border-color:rgba(255,107,53,.3);background:rgba(255,107,53,.08)"
+                  data-type="Heatwave" data-loc="Nagpur Maharashtra" data-detail="47°C recorded. Extreme heat index for 48hrs.">
+            ⚡ First to Alert — Nagpur
+          </button>
+        </div>
+      </div>
+
+      <!-- AQI CARD (live from API) -->
+      <div class="card risk-card-aqi glow-purple p-5 fade-up" style="animation-delay:.2s;cursor:pointer;" onclick="openAlertModal('😷','Air Quality Alert','Kolkata · Live Data','High','<b>US AQI:</b> 111 / 500<br><b>PM2.5:</b> 21.1 µg<br><b>PM10:</b> 26.3 µg<br><b>Status:</b> UNHEALTHY — sensitive groups should stay indoors')">
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">😷</span>
+            <div>
+              <div class="font-bold text-sm">Air Quality</div>
+              <div class="text-[10px] mono" style="color:var(--muted)" id="aqi-location">Kolkata · Live Data</div>
+            </div>
+          </div>
+          <span id="aqi-badge" class="badge badge-purple">—</span>
+        </div>
+        <div class="mb-3">
+          <div class="flex justify-between text-xs mb-1">
+            <span style="color:var(--muted)">US AQI</span>
+            <span class="mono font-semibold" style="color:var(--purple)" id="aqi-bar-text">-- / 500</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="aqi-bar" style="width:0%;background:linear-gradient(90deg,var(--green),var(--purple))"></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-4 text-xs">
+          <div class="rounded-lg p-2" style="background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.12)">
+            <div style="color:var(--muted)" class="text-[10px]">PM2.5</div>
+            <div class="font-bold" style="color:var(--purple)" id="pm25-val">--</div>
+          </div>
+          <div class="rounded-lg p-2" style="background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.12)">
+            <div style="color:var(--muted)" class="text-[10px]">PM10</div>
+            <div class="font-bold" style="color:var(--purple)" id="pm10-val">--</div>
+          </div>
+        </div>
+        <button class="first-alert-btn btn-ghost w-full py-2 rounded-lg text-xs" style="color:var(--purple);border-color:rgba(168,85,247,.3);background:rgba(168,85,247,.08)"
+                data-type="AQI" data-loc="Kolkata" data-detail="Live AQI alert from AlertIndia sensor.">
+          ⚡ First to Alert — AQI
+        </button>
+      </div>
+
+      <!-- RAINFALL CARD -->
+      <div class="card risk-card-rain p-5 fade-up" style="animation-delay:.25s;box-shadow:0 0 0 1px rgba(56,189,248,.2);cursor:pointer;" onclick="openAlertModal('🌧️','Rainfall Alert','Assam-Meghalaya Belt','Medium','<b>Accumulated:</b> 142mm / 200mm<br><b> w :</b> 4 hrs early<br><b>Forecast:</b> Heavy 24hr<br><b>Status:</b> Heavy rainfall continuing')">
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🌧️</span>
+            <div>
+              <div class="font-bold text-sm">Rainfall Alert</div>
+              <div class="text-[10px] mono" style="color:var(--muted)">Assam–Meghalaya Belt</div>
+            </div>
+          </div>
+          <span class="badge badge-med">Medium</span>
+        </div>
+        <div class="mb-3">
+          <div class="flex justify-between text-xs mb-1">
+            <span style="color:var(--muted)">Accumulated</span>
+            <span class="mono font-semibold" style="color:#38bdf8">142mm / 200mm</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:71%;background:linear-gradient(90deg,#0ea5e9,#38bdf8)"></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-4 text-xs">
+          <div class="rounded-lg p-2" style="background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.12)">
+            <div style="color:var(--muted)" class="text-[10px]">Ahead of IMD</div>
+            <div class="font-bold" style="color:#38bdf8">4 hrs early</div>
+          </div>
+          <div class="rounded-lg p-2" style="background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.12)">
+            <div style="color:var(--muted)" class="text-[10px]">Forecast</div>
+            <div class="font-bold" style="color:#38bdf8">Heavy 24hr</div>
+          </div>
+        </div>
+        <button class="first-alert-btn btn-ghost w-full py-2 rounded-lg text-xs" style="color:#38bdf8;border-color:rgba(56,189,248,.3);background:rgba(56,189,248,.08)"
+                data-type="Rainfall" data-loc="Assam-Meghalaya Belt" data-detail="142mm accumulated. Heavy rainfall forecast for 24hrs.">
+          ⚡ First to Alert — Rainfall
+        </button>
+      </div>
+
+      <!-- ACOUSTIC INTELLIGENCE / SENTINEL CARD -->
+      <div class="card risk-card-drone glow-red p-5 fade-up" style="animation-delay:.3s;cursor:pointer;" onclick="openAlertModal('🛰️','Sentinel Mode','Acoustic + Vibration Intel','Low','<b>Status:</b> Standby<br><b>Mode:</b> Acoustic + Vibration Detection<br><b>Mic Status:</b> Off<br><b>Info:</b> Arm Sentinel to begin acoustic monitoring')">
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🛰️</span>
+            <div>
+              <div class="font-bold text-sm flex items-center gap-1.5">
+                Sentinel Mode
+                <span class="badge badge-purple">Beta</span>
+              </div>
+              <div class="text-[10px] mono" style="color:var(--muted)">Acoustic + Vibration Intel</div>
+            </div>
+          </div>
+          <span id="sentinel-risk-badge" class="badge badge-low">Standby</span>
+        </div>
+        <div class="sentinel-3d-wrap" id="sentinel-3d-container">
+  <div style="position:relative;display:flex;align-items:center;justify-content:center;width:160px;height:120px;">
+    <!-- Signal rings behind satellite -->
+    <div class="signal-ring ring1"></div>
+    <div class="signal-ring ring2"></div>
+    <div class="signal-ring ring3"></div>
+
+    <!-- SVG Satellite -->
+    <svg id="satellite-3d" xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 120 100" width="160" height="120"
+         style="position:relative;z-index:2;filter:drop-shadow(0 0 10px rgba(168,85,247,0.7));transition:filter 0.3s;">
+
+      <!-- ── LEFT SOLAR PANEL ── -->
+      <g>
+        <!-- panel frame -->
+        <rect x="2" y="36" width="38" height="28" rx="3"
+              fill="#1e293b" stroke="#6366f1" stroke-width="1.2"/>
+        <!-- panel cells grid -->
+        <line x1="15" y1="36" x2="15" y2="64" stroke="#6366f1" stroke-width="0.6" opacity="0.6"/>
+        <line x1="28" y1="36" x2="28" y2="64" stroke="#6366f1" stroke-width="0.6" opacity="0.6"/>
+        <line x1="2"  y1="48" x2="40" y2="48" stroke="#6366f1" stroke-width="0.6" opacity="0.6"/>
+        <!-- cell fills -->
+        <rect x="3"  y="37" width="11" height="10" rx="1" fill="#312e81" opacity="0.8"/>
+        <rect x="16" y="37" width="11" height="10" rx="1" fill="#3730a3" opacity="0.8"/>
+        <rect x="29" y="37" width="10" height="10" rx="1" fill="#312e81" opacity="0.8"/>
+        <rect x="3"  y="50" width="11" height="13" rx="1" fill="#3730a3" opacity="0.8"/>
+        <rect x="16" y="50" width="11" height="13" rx="1" fill="#312e81" opacity="0.8"/>
+        <rect x="29" y="50" width="10" height="13" rx="1" fill="#3730a3" opacity="0.8"/>
+        <!-- glint -->
+        <rect x="4" y="38" width="4" height="2" rx="1" fill="#818cf8" opacity="0.5"/>
+        <!-- boom connecting panel to body -->
+        <rect x="40" y="48" width="4" height="4" rx="1" fill="#475569"/>
+      </g>
+
+      <!-- ── RIGHT SOLAR PANEL ── -->
+      <g>
+        <rect x="80" y="36" width="38" height="28" rx="3"
+              fill="#1e293b" stroke="#6366f1" stroke-width="1.2"/>
+        <line x1="93"  y1="36" x2="93"  y2="64" stroke="#6366f1" stroke-width="0.6" opacity="0.6"/>
+        <line x1="106" y1="36" x2="106" y2="64" stroke="#6366f1" stroke-width="0.6" opacity="0.6"/>
+        <line x1="80"  y1="48" x2="118" y2="48" stroke="#6366f1" stroke-width="0.6" opacity="0.6"/>
+        <rect x="81"  y="37" width="11" height="10" rx="1" fill="#312e81" opacity="0.8"/>
+        <rect x="94"  y="37" width="11" height="10" rx="1" fill="#3730a3" opacity="0.8"/>
+        <rect x="107" y="37" width="10" height="10" rx="1" fill="#312e81" opacity="0.8"/>
+        <rect x="81"  y="50" width="11" height="13" rx="1" fill="#3730a3" opacity="0.8"/>
+        <rect x="94"  y="50" width="11" height="13" rx="1" fill="#312e81" opacity="0.8"/>
+        <rect x="107" y="50" width="10" height="13" rx="1" fill="#3730a3" opacity="0.8"/>
+        <rect x="82" y="38" width="4" height="2" rx="1" fill="#818cf8" opacity="0.5"/>
+        <rect x="76" y="48" width="4" height="4" rx="1" fill="#475569"/>
+      </g>
+
+      <!-- ── MAIN BODY ── -->
+      <rect x="44" y="28" width="32" height="44" rx="5"
+            fill="url(#bodyGrad)" stroke="#a855f7" stroke-width="1.5"/>
+      <!-- body detail lines -->
+      <line x1="44" y1="42" x2="76" y2="42" stroke="#7c3aed" stroke-width="0.8" opacity="0.6"/>
+      <line x1="44" y1="56" x2="76" y2="56" stroke="#7c3aed" stroke-width="0.8" opacity="0.6"/>
+      <!-- body panel -->
+      <rect x="48" y="32" width="10" height="8" rx="2" fill="#312e81" opacity="0.9"/>
+      <rect x="62" y="32" width="10" height="8" rx="2" fill="#1e1b4b" opacity="0.9"/>
+      <!-- sensor dot -->
+      <circle cx="60" cy="50" r="4" fill="#a855f7" opacity="0.9"/>
+      <circle cx="60" cy="50" r="2" fill="#e879f9"/>
+
+      <!-- ── ANTENNA (rotates with cursor) ── -->
+      <g id="antenna-group" style="transform-origin:60px 28px;transform:rotate(0deg);transition:transform 0.15s ease;">
+        <!-- antenna arm -->
+        <line x1="60" y1="28" x2="60" y2="6" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round"/>
+        <!-- dish -->
+        <ellipse cx="60" cy="5" rx="9" ry="4" fill="none" stroke="#00c6ff" stroke-width="1.5"/>
+        <ellipse cx="60" cy="5" rx="5" ry="2.2" fill="rgba(0,198,255,0.15)" stroke="#00c6ff" stroke-width="0.8"/>
+        <!-- dish pointer tip -->
+        <circle cx="60" cy="3" r="1.5" fill="#00c6ff"/>
+        <!-- antenna base joint -->
+        <circle cx="60" cy="28" r="3" fill="#64748b" stroke="#94a3b8" stroke-width="1"/>
+      </g>
+
+      <!-- ── BOTTOM THRUSTER ── -->
+      <rect x="54" y="72" width="12" height="6" rx="2" fill="#334155" stroke="#475569" stroke-width="1"/>
+      <ellipse cx="60" cy="79" rx="5" ry="2" fill="#1e293b" stroke="#6366f1" stroke-width="0.8"/>
+
+      <!-- gradients -->
+      <defs>
+        <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"   stop-color="#7c3aed"/>
+          <stop offset="50%"  stop-color="#4f46e5"/>
+          <stop offset="100%" stop-color="#1e1b4b"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+</div>
+<div class="grid grid-cols-2 gap-2 mb-4 text-xs">
+  <div class="rounded-lg p-2" style="background:rgba(255,71,87,.06);border:1px solid rgba(255,71,87,.12)">
+    <div style="color:var(--muted)" class="text-[10px]">Anomaly Detect</div>
+    <div class="font-bold" style="color:var(--red)" id="sentinel-status-text">Inactive</div>
+  </div>
+  <div class="rounded-lg p-2" style="background:rgba(255,71,87,.06);border:1px solid rgba(255,71,87,.12)">
+    <div style="color:var(--muted)" class="text-[10px]">Mic Status</div>
+    <div class="font-bold" style="color:var(--muted)" id="sentinel-mic-text">Off</div>
+  </div>
+</div>
+<button id="sentinel-btn" class="btn-primary w-full py-2 rounded-lg text-xs">
+  <span id="sentinel-btn-text">🛰️ Arm Sentinel</span>
+</button>
+      </div><!-- /sentinel card -->
+
+      <!-- ══════════════════════════════════════════
+           WOMEN SAFETY GUARDIAN CARD
+      ══════════════════════════════════════════ -->
+      <div class="card p-5 fade-up" id="women-safety-card"
+           style="animation-delay:.32s;border-top:2px solid #f472b6;box-shadow:0 0 0 1px rgba(244,114,182,.2),inset 0 0 30px rgba(244,114,182,.03);cursor:pointer;position:relative;overflow:hidden;"
+           onclick="openWomenSafetyModal()">
+
+        <!-- shimmer pulse behind card on armed state -->
+        <div id="ws-card-pulse" style="display:none;position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(244,114,182,.07),transparent 70%);pointer-events:none;animation:wsPulseCard 2s ease-in-out infinite;"></div>
+
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl" style="filter:drop-shadow(0 0 6px rgba(244,114,182,.7))">🛡️</span>
+            <div>
+              <div class="font-bold text-sm flex items-center gap-1.5" style="color:#f9a8d4;">
+                Guardian Shield
+                <span class="badge" style="background:rgba(244,114,182,.15);border:1px solid rgba(244,114,182,.4);color:#f472b6;font-size:.55rem;">SOS</span>
+              </div>
+              <div class="text-[10px] mono" style="color:var(--muted)">Women Safety · Emergency Alert</div>
+            </div>
+          </div>
+          <span id="ws-card-badge" class="badge" style="background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.3);color:#f472b6;">STANDBY</span>
+        </div>
+
+        <!-- Contact count + status strip -->
+        <div class="grid grid-cols-2 gap-2 mb-4 text-xs">
+          <div class="rounded-lg p-2" style="background:rgba(244,114,182,.06);border:1px solid rgba(244,114,182,.15)">
+            <div class="text-[10px]" style="color:var(--muted)">Guardians</div>
+            <div class="font-bold" style="color:#f472b6;" id="ws-contact-count-card">0 saved</div>
+          </div>
+          <div class="rounded-lg p-2" style="background:rgba(244,114,182,.06);border:1px solid rgba(244,114,182,.15)">
+            <div class="text-[10px]" style="color:var(--muted)">SOS Status</div>
+            <div class="font-bold" style="color:var(--muted)" id="ws-status-card">Inactive</div>
+          </div>
+        </div>
+
+        <!-- SOS hint -->
+        <div style="background:rgba(244,114,182,.06);border:1px solid rgba(244,114,182,.15);border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:10px;color:var(--muted);line-height:1.6;">
+          📡 Share live location with trusted contacts instantly. One tap alerts everyone when you need help.
+        </div>
+
+        <button class="w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2"
+                style="background:linear-gradient(135deg,#be185d,#f472b6);color:#fff;border:none;cursor:pointer;min-height:38px;"
+                onclick="event.stopPropagation();openWomenSafetyModal()">
+          🛡️ Open Guardian Shield
+        </button>
+      </div><!-- /women safety card -->
+
+      <!-- WHATSAPP + MAP + CIVIL — full-width wrapper -->
+      <div style="grid-column:1/-1;">
+
+        <!-- WHATSAPP CARD — full width -->
+        <div class="card p-5 fade-up mb-4" style="animation-delay:.35s;border-top:2px solid var(--green);box-shadow:0 0 0 1px rgba(0,229,160,.15);cursor:pointer;" onclick="openWhatsAppModal()">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">📲</span>
+              <div>
+                <div class="font-bold text-sm">Get WhatsApp Alerts</div>
+                <div class="text-[10px] mono" style="color:var(--muted)">Earliest warnings · Free · India</div>
+              </div>
+            </div>
+            <span class="badge badge-low">Free</span>
+          </div>
+          <div style="background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.25);border-radius:8px;padding:10px;margin-bottom:12px;">
+            <div style="color:var(--green);font-size:11px;font-weight:bold;margin-bottom:6px;">📱 STEP 1 — Join WhatsApp First</div>
+            <div style="color:var(--muted);font-size:10px;line-height:1.5;">
+              Open WhatsApp and message <span style="color:var(--text);font-weight:bold;">+1 415 523 8886</span><br>
+              Send exactly: <span style="color:var(--cyan);font-family:monospace;">join &lt;sandbox-word&gt;</span><br>
+              Wait for Twilio's confirmation reply, then register below. ✅
+            </div>
+          </div>
+          <div class="space-y-2 mb-3">
+            <input id="signup-name" type="text" placeholder="Your name"
+                   class="w-full bg-[#0b1628] border border-[#1a2d45] px-3 py-2 rounded-lg text-sm outline-none focus:border-[#00c6ff]" style="color:var(--text)"/>
+            <div class="flex gap-2">
+              <input id="signup-phone" type="tel" placeholder="+91 phone number"
+                     class="flex-1 bg-[#0b1628] border border-[#1a2d45] px-3 py-2 rounded-lg text-sm outline-none focus:border-[#00c6ff]" style="color:var(--text)"/>
+              <input id="signup-location" type="text" placeholder="District"
+                     class="w-28 bg-[#0b1628] border border-[#1a2d45] px-3 py-2 rounded-lg text-sm outline-none focus:border-[#00c6ff]" style="color:var(--text)"/>
+            </div>
+          </div>
+          <button id="signup-btn" class="btn-primary w-full py-2.5 rounded-lg text-sm flex items-center justify-center gap-2">
+            <span id="signup-btn-text">🟢 Register for Alerts</span>
+          </button>
+        </div>
+
+        <!-- MAP + CIVIL stacked -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <!-- MAP CARD -->
+      <div class="card p-5 fade-up" style="animation-delay:.4s;border-top:2px solid var(--cyan);box-shadow:0 0 0 1px rgba(0,198,255,.15);cursor:pointer;" onclick="openMapModal()">
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🗺️</span>
+            <div>
+              <div class="font-bold text-sm">Emergency Map</div>
+              <div class="text-[10px] mono" style="color:var(--muted)" id="map-card-label">Kolkata · Live Location</div>
+            </div>
+          </div>
+          <span class="badge badge-low">Live</span>
+        </div>
+
+        <!-- Category pills -->
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">
+          <button onclick="event.stopPropagation();mapShowLayer('hospital')" id="mpill-hospital" style="padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:rgba(0,198,255,.12);color:var(--cyan);font-size:10px;cursor:pointer;">🏥 Hospitals</button>
+          <button onclick="event.stopPropagation();mapShowLayer('police')"   id="mpill-police"   style="padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:10px;cursor:pointer;">👮 Police</button>
+          <button onclick="event.stopPropagation();mapShowLayer('fire')"     id="mpill-fire"     style="padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:10px;cursor:pointer;">🚒 Fire</button>
+          <button onclick="event.stopPropagation();mapShowLayer('pharmacy')" id="mpill-pharmacy" style="padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:10px;cursor:pointer;">💊 Pharmacy</button>
+        </div>
+
+        <!-- Visual map with pulse rings -->
+        <div style="height:160px;border-radius:10px;border:1px solid var(--border);background:radial-gradient(ellipse at center,#0d1f35 0%,#050c1a 100%);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:10px;">
+          <!-- grid lines -->
+          <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.12" xmlns="http://www.w3.org/2000/svg">
+            <defs><pattern id="mg" width="30" height="30" patternUnits="userSpaceOnUse">
+              <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#00c6ff" stroke-width="0.5"/>
+            </pattern></defs>
+            <rect width="100%" height="100%" fill="url(#mg)"/>
+          </svg>
+          <!-- pulse rings -->
+          <div style="position:absolute;width:60px;height:60px;border-radius:50%;border:1px solid rgba(0,198,255,0.6);animation:mpulse 2s ease-out infinite;"></div>
+          <div style="position:absolute;width:100px;height:100px;border-radius:50%;border:1px solid rgba(0,198,255,0.3);animation:mpulse 2s ease-out infinite;animation-delay:0.6s;"></div>
+          <div style="position:absolute;width:150px;height:150px;border-radius:50%;border:1px solid rgba(0,198,255,0.12);animation:mpulse 2s ease-out infinite;animation-delay:1.2s;"></div>
+          <!-- center pin + label -->
+          <div style="position:relative;z-index:2;text-align:center;">
+            <div style="font-size:24px;filter:drop-shadow(0 0 8px var(--cyan));">📍</div>
+            <div id="map-pin-label" style="color:var(--cyan);font-size:10px;font-weight:600;margin-top:2px;">Kolkata</div>
+            <div id="map-cat-label" style="color:var(--muted);font-size:9px;">🏥 hospitals nearby</div>
+          </div>
+        </div>
+
+        <!-- Open map buttons -->
+        <div style="display:flex;gap:6px;">
+          <a id="map-gmaps-btn" href="https://www.google.com/maps/search/hospitals+near+Kolkata/@22.5726,88.3639,14z" target="_blank"
+             style="flex:1;text-align:center;padding:7px 4px;background:rgba(0,198,255,.1);border:1px solid var(--cyan);border-radius:8px;color:var(--cyan);font-size:10px;text-decoration:none;font-weight:600;">
+            🗺️ Google Maps
+          </a>
+          <a id="map-osm-btn" href="https://www.openstreetmap.org/?mlat=22.5726&mlon=88.3639&zoom=14" target="_blank"
+             style="flex:1;text-align:center;padding:7px 4px;background:rgba(0,229,160,.06);border:1px solid var(--green);border-radius:8px;color:var(--green);font-size:10px;text-decoration:none;font-weight:600;">
+            🌍 OpenStreetMap
+          </a>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           CIVIL ALERT ZONE + EMERGENCY SPEED DIAL
+      ══════════════════════════════════════════ -->
+      <div class="card p-5 fade-up" style="animation-delay:.45s;border-top:2px solid var(--red);box-shadow:0 0 0 1px rgba(255,71,87,.2),inset 0 0 30px rgba(255,71,87,.03);cursor:pointer;" onclick="openCivilModal()">
+
+        <!-- Header -->
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🚨</span>
+            <div>
+              <div class="font-bold text-sm">Civil Alert Zone</div>
+              <div class="text-[10px] mono" style="color:var(--muted)" id="civil-location-label">West Bengal · Live Intel</div>
+            </div>
+          </div>
+          <span class="badge" style="background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.3);" id="civil-risk-badge">HIGH RISK</span>
+        </div>
+
+        <!-- Active civil events list -->
+        <div id="civil-events-list" style="margin-bottom:10px;display:flex;flex-direction:column;gap:6px;">
+
+          <!-- Event 1: Political Rally -->
+          <div style="background:rgba(255,71,87,.06);border:1px solid rgba(255,71,87,.2);border-radius:8px;padding:8px 10px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;">
+              <span style="font-size:11px;font-weight:700;color:var(--red);">⚠️ Political Rally</span>
+              <span style="font-size:9px;color:var(--muted);font-family:monospace;">TODAY</span>
+            </div>
+            <div style="font-size:10px;color:var(--text);line-height:1.5;">
+              <b style="color:var(--amber);">Brigade Parade Ground → Red Road</b><br>
+              <span style="color:var(--muted);">Start: 2:00 PM · Est. crowd: 50,000+</span><br>
+              <span style="color:var(--muted);">Route risk: Medium · Disperse: ~8 PM</span>
+            </div>
+          </div>
+
+          <!-- Event 2: Red Zone Tension -->
+          <div style="background:rgba(245,166,35,.06);border:1px solid rgba(245,166,35,.2);border-radius:8px;padding:8px 10px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;">
+              <span style="font-size:11px;font-weight:700;color:var(--amber);">🔴 Red Zone — Tension</span>
+              <span style="font-size:9px;color:var(--muted);font-family:monospace;">ACTIVE</span>
+            </div>
+            <div style="font-size:10px;color:var(--text);line-height:1.5;">
+              <b style="color:var(--amber);">Barrackpore · North 24 Parganas</b><br>
+              <span style="color:var(--muted);">Communal tension reported · Sec 144 active</span><br>
+              <span style="color:var(--muted);">Avoid: NH-12 between 6 PM–10 PM</span>
+            </div>
+          </div>
+
+          <!-- Event 3: Election Alert -->
+          <div style="background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:8px;padding:8px 10px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;">
+              <span style="font-size:11px;font-weight:700;color:var(--purple);">🗳️ Election Alert</span>
+              <span style="font-size:9px;color:var(--muted);font-family:monospace;">48 HRS</span>
+            </div>
+            <div style="font-size:10px;color:var(--text);line-height:1.5;">
+              <b style="color:var(--purple);">By-election · South 24 Parganas</b><br>
+              <span style="color:var(--muted);">Heavy police deployment expected</span><br>
+              <span style="color:var(--muted);">Polling booths: 847 · Sensitive: 112</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Divider + Emergency Speed Dial -->
+        <div style="border-top:1px solid var(--border);padding-top:10px;">
+          <div style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:7px;">EMERGENCY SPEED DIAL</div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+
+            <!-- Police -->
+            <a href="tel:100" style="text-decoration:none;">
+              <div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:7px;cursor:pointer;transition:background .2s;"
+                   onmouseover="this.style.background='rgba(59,130,246,.2)'" onmouseout="this.style.background='rgba(59,130,246,.1)'">
+                <span style="font-size:16px;">👮</span>
+                <div>
+                  <div style="font-size:9px;color:#93c5fd;font-weight:700;">POLICE</div>
+                  <div style="font-size:13px;font-weight:800;color:#fff;font-family:monospace;">100</div>
+                </div>
+                <span style="margin-left:auto;font-size:10px;color:#93c5fd;">📞</span>
+              </div>
+            </a>
+
+            <!-- Ambulance -->
+            <a href="tel:108" style="text-decoration:none;">
+              <div style="background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.3);border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:7px;cursor:pointer;transition:background .2s;"
+                   onmouseover="this.style.background='rgba(255,71,87,.2)'" onmouseout="this.style.background='rgba(255,71,87,.1)'">
+                <span style="font-size:16px;">🚑</span>
+                <div>
+                  <div style="font-size:9px;color:#fca5a5;font-weight:700;">AMBULANCE</div>
+                  <div style="font-size:13px;font-weight:800;color:#fff;font-family:monospace;">108</div>
+                </div>
+                <span style="margin-left:auto;font-size:10px;color:#fca5a5;">📞</span>
+              </div>
+            </a>
+
+            <!-- Fire -->
+            <a href="tel:101" style="text-decoration:none;">
+              <div style="background:rgba(255,107,53,.1);border:1px solid rgba(255,107,53,.3);border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:7px;cursor:pointer;transition:background .2s;"
+                   onmouseover="this.style.background='rgba(255,107,53,.2)'" onmouseout="this.style.background='rgba(255,107,53,.1)'">
+                <span style="font-size:16px;">🚒</span>
+                <div>
+                  <div style="font-size:9px;color:#fdba74;font-weight:700;">FIRE</div>
+                  <div style="font-size:13px;font-weight:800;color:#fff;font-family:monospace;">101</div>
+                </div>
+                <span style="margin-left:auto;font-size:10px;color:#fdba74;">📞</span>
+              </div>
+            </a>
+
+            <!-- Women Helpline -->
+            <a href="tel:1091" style="text-decoration:none;">
+              <div style="background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:7px;cursor:pointer;transition:background .2s;"
+                   onmouseover="this.style.background='rgba(168,85,247,.2)'" onmouseout="this.style.background='rgba(168,85,247,.1)'">
+                <span style="font-size:16px;">👩</span>
+                <div>
+                  <div style="font-size:9px;color:#d8b4fe;font-weight:700;">WOMEN HELP</div>
+                  <div style="font-size:13px;font-weight:800;color:#fff;font-family:monospace;">1091</div>
+                </div>
+                <span style="margin-left:auto;font-size:10px;color:#d8b4fe;">📞</span>
+              </div>
+            </a>
+
+            <!-- Disaster -->
+            <a href="tel:1078" style="text-decoration:none;">
+              <div style="background:rgba(0,198,255,.1);border:1px solid rgba(0,198,255,.3);border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:7px;cursor:pointer;transition:background .2s;"
+                   onmouseover="this.style.background='rgba(0,198,255,.2)'" onmouseout="this.style.background='rgba(0,198,255,.1)'">
+                <span style="font-size:16px;">🆘</span>
+                <div>
+                  <div style="font-size:9px;color:#7dd3fc;font-weight:700;">DISASTER</div>
+                  <div style="font-size:13px;font-weight:800;color:#fff;font-family:monospace;">1078</div>
+                </div>
+                <span style="margin-left:auto;font-size:10px;color:#7dd3fc;">📞</span>
+              </div>
+            </a>
+
+            <!-- Child Helpline -->
+            <a href="tel:1098" style="text-decoration:none;">
+              <div style="background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.25);border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:7px;cursor:pointer;transition:background .2s;"
+                   onmouseover="this.style.background='rgba(0,229,160,.18)'" onmouseout="this.style.background='rgba(0,229,160,.08)'">
+                <span style="font-size:16px;">👶</span>
+                <div>
+                  <div style="font-size:9px;color:#6ee7b7;font-weight:700;">CHILD HELP</div>
+                  <div style="font-size:13px;font-weight:800;color:#fff;font-family:monospace;">1098</div>
+                </div>
+                <span style="margin-left:auto;font-size:10px;color:#6ee7b7;">📞</span>
+              </div>
+            </a>
+
+          </div>
+
+          <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:8px;">
+            Tap any number to open your phone's dialer
+          </div>
+        </div>
+
+      </div><!-- /civil alert zone card -->
+
+        </div><!-- /map + civil inner grid -->
+      </div><!-- /whatsapp+map+civil wrapper -->
+
+    </div>
+  </section>
+  <!-- ALERT MODAL -->
+<div id="alert-modal-overlay" onclick="closeAlertModal()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center;">
+  <div onclick="event.stopPropagation()" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:420px;width:90%;position:relative;max-height:80vh;overflow-y:auto;">
+    <button onclick="closeAlertModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;">✕</button>
+    <div id="modal-icon" style="font-size:2rem;margin-bottom:8px;"></div>
+    <div id="modal-title" style="font-size:1.1rem;font-weight:bold;color:var(--text);margin-bottom:4px;"></div>
+    <div id="modal-location" style="font-size:11px;color:var(--muted);margin-bottom:12px;"></div>
+    <div id="modal-severity" style="margin-bottom:12px;"></div>
+    <div id="modal-details" style="font-size:12px;color:var(--text);line-height:1.8;margin-bottom:16px;"></div>
+    <div style="background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);border-radius:8px;padding:12px;margin-bottom:16px;font-size:11px;color:var(--muted);">
+      📢 <span style="color:var(--green);font-weight:bold;">Alerts sent</span> to all registered users in this region via WhatsApp
+    </div>
+    <button onclick="closeAlertModal()" style="width:100%;padding:10px;background:var(--cyan);color:#000;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">Close</button>
+  </div>
+</div>
+
+  <!-- ═══════════════════ HOW ALERTINDIA WORKS ═══════════════════ -->
+  <section class="mb-10 fade-up" style="animation-delay:.3s">
+    <div class="section-label">How AlertIndia Works</div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">Step 01</div>
+        <div class="step-icon">🛰️</div>
+        <div class="step-title">Satellite + Sensor Data</div>
+        <div class="step-desc">We pull river levels, temperature, rainfall and air quality data from ISRO, ESA, and CPCB every 30 minutes.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Step 02</div>
+        <div class="step-icon">🤖</div>
+        <div class="step-title">AI Risk Detection</div>
+        <div class="step-desc">Our model detects dangerous patterns hours before they reach critical levels — across all hazard types simultaneously.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Step 03</div>
+        <div class="step-icon">📡</div>
+        <div class="step-title">First to Alert</div>
+        <div class="step-desc">WhatsApp & SMS alerts go directly to panchayat heads, ASHA workers and community leaders — skipping slow government chains.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Step 04</div>
+        <div class="step-icon">🏘️</div>
+        <div class="step-title">Any Location</div>
+        <div class="step-desc">Search any village, town or city in India. Or use your current location. Coverage down to local neighbourhood level.</div>
+      </div>
+    </div>
+
+    <!-- Sentinel Mode strip -->
+    <div class="sentinel-section">
+      <div class="sentinel-left">
+        <div class="sentinel-icon">📡</div>
+        <div>
+          <div class="sentinel-title">
+            <span style="font-family:'JetBrains Mono',monospace;font-weight:700">Sentinel Mode</span>
+            <span class="badge badge-purple">BETA</span>
+          </div>
+          <div class="sentinel-desc">Activates real-time acoustic + vibration monitoring via your device sensors. Detects unusual patterns — distant thunder, ground tremors, industrial alerts.</div>
+        </div>
+      </div>
+      <button class="sentinel-arm-btn" onclick="document.getElementById('sentinel-btn').click()">
+        <span>📡</span> Arm Sentinel
+      </button>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ RATING ═══════════════════ -->
+  <section class="card p-6 mb-10 fade-up" style="animation-delay:.4s">
+    <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+      <h2 class="mono font-bold text-sm uppercase tracking-widest"> Community Ratings</h2>
+      <span class="text-xs" style="color:var(--muted)"><span id="rating-count">--</span> verified reviews</span>
+    </div>
+    <div id="stars" class="flex gap-2 mb-3">
+      <span class="star" data-val="1">★</span>
+      <span class="star" data-val="2">★</span>
+      <span class="star" data-val="3">★</span>
+      <span class="star" data-val="4">★</span>
+      <span class="star" data-val="5">★</span>
+      <span id="star-label" class="text-sm self-center ml-2 italic" style="color:var(--muted)">Tap to rate</span>
+    </div>
+    <textarea id="rating-comment" maxlength="280" rows="2" placeholder="Share your feedback…"
+              class="w-full bg-[#0b1628] border border-[#1a2d45] px-4 py-2 rounded-lg text-sm outline-none focus:border-[#00c6ff] mb-3 resize-none" style="color:var(--text)"></textarea>
+    <button id="submit-rating-btn" disabled class="btn-primary px-6 py-2.5 rounded-lg text-sm">
+      <span id="rating-btn-text">⭐ Submit Rating</span>
+    </button>
+    <!-- Reviews strip -->
+    <div id="reviews-strip" class="flex gap-3 mt-4 pt-4 overflow-x-auto" style="border-top:1px solid var(--border)"></div>
+  </section>
+
+</main>
+
+<footer style="border-top:1px solid var(--border)" class="py-5 text-center text-xs">
+  <span style="color:var(--muted)">© 2026 AlertIndia · Alert Bharat Team · Google Solution Challenge</span>
+  <span class="mx-3" style="color:var(--border)">|</span>
+  <span class="mono text-xs" style="color:var(--cyan)">GDC Hackathon 2026</span>
+</footer>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════════════════════
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzNDte4I0SvNumeWiJzKQ9p5k54EOFZT798frD_-b8P67ZaLhPeO0hyQKmjLn1kanRW/exec";
+
+// ════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (type || '') + ' show';
+  setTimeout(() => t.className = 'toast', 3200);
+}
+
+function postAction(payload) {
+  return fetch(GAS_URL, {
+    method: 'POST', mode: 'no-cors',
+    body: JSON.stringify(payload)
+  }).catch(err => console.warn('POST err:', err));
+}
+
+function getAction(action) {
+  return fetch(GAS_URL + '?action=' + encodeURIComponent(action))
+    .then(r => r.json())
+    .catch(err => { console.warn('GET err:', err); return null; });
+}
+
+// ════════════════════════════════════════════════════════════
+// LIVE WEATHER + DATA MAPPING
+// ════════════════════════════════════════════════════════════
+function aqiCategory(aqi) {
+  if (!aqi) return { label:'—', cls:'badge-purple' };
+  if (aqi <= 50)  return { label:'Good',       cls:'badge-low' };
+  if (aqi <= 100) return { label:'Moderate',   cls:'badge-low' };
+  if (aqi <= 150) return { label:'Unhealthy',  cls:'badge-med' };
+  if (aqi <= 200) return { label:'Unhealthy',  cls:'badge-high' };
+  if (aqi <= 300) return { label:'Very Unhealthy', cls:'badge-high' };
+  return { label:'Hazardous', cls:'badge-high' };
+}
+
+async function loadWeather() {
+  const d = await getAction('weather');
+  if (!d || d.error) return;
+
+  document.getElementById('live-temp').textContent     = Math.round(d.temperature) + '°C';
+  document.getElementById('live-feels').textContent    = Math.round(d.feels_like)  + '°C';
+  document.getElementById('live-humidity').textContent = Math.round(d.humidity)    + '%';
+  document.getElementById('live-wind').textContent     = Math.round(d.wind_speed);
+  document.getElementById('live-updated').textContent  = new Date().toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'});
+
+  if (d.visitor_count != null) {
+    document.getElementById('visitor-count').textContent = d.visitor_count;
+    const inl = document.getElementById('visitor-count-inline');
+    if (inl) inl.textContent = d.visitor_count;
+  }
+  if (d.rating_count  != null) {
+    document.getElementById('rating-count').textContent = d.rating_count;
+    document.getElementById('rating-count-header').textContent = d.rating_count + ' community ratings';
+  }
+
+  // AQI card — live data
+  if (d.aqi != null) {
+    const aqi = Math.round(d.aqi);
+    const cat = aqiCategory(aqi);
+    document.getElementById('live-aqi').textContent  = aqi;
+    document.getElementById('aqi-bar-text').textContent = aqi + ' / 500';
+    document.getElementById('aqi-bar').style.width   = Math.min(100, aqi / 5) + '%';
+    document.getElementById('pm25-val').textContent  = (d.pm2_5 || '--') + ' µg';
+    document.getElementById('pm10-val').textContent  = (d.pm10  || '--') + ' µg';
+    const badge = document.getElementById('aqi-badge');
+    badge.textContent = cat.label;
+    badge.className = 'badge ' + cat.cls;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// REVIEWS STRIP
+// ════════════════════════════════════════════════════════════
+async function loadReviews() {
+  const d = await getAction('get_ratings');
+  if (!d || !d.ratings) return;
+  const strip = document.getElementById('reviews-strip');
+  strip.innerHTML = '';
+  d.ratings.forEach(r => {
+    const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+    const el = document.createElement('div');
+    el.className = 'card p-3 flex-shrink-0';
+    el.style.minWidth = '170px';
+    el.innerHTML =
+      '<div class="text-xs mb-1" style="color:var(--amber)">' + stars + '</div>' +
+      '<div class="text-xs" style="color:var(--text)">"' + (r.comment||'').replace(/</g,'&lt;').slice(0,70) + '"</div>' +
+      '<div class="text-[10px] mono mt-1" style="color:var(--muted)">' + r.district + ' · ' + r.time + '</div>';
+    strip.appendChild(el);
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// FIRST TO ALERT BUTTONS
+// ════════════════════════════════════════════════════════════
+document.querySelectorAll('.first-alert-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> Sending…';
+    await postAction({
+      action: 'alert',
+      phone: '+919875613168',
+      message: '[AlertIndia] ' + btn.dataset.type + ' — ' + btn.dataset.loc + ': ' + btn.dataset.detail
+    });
+    btn.innerHTML = '✅ Alert Sent';
+    toast('✅ Alert dispatched: ' + btn.dataset.loc, 'success');
+    setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 5000);
+  });
+});
+
+// ════════════════════════════════════════════════════════════
+// SIGNUP — card inline registration
+// Uses a real fetch (not no-cors) so we can read the response
+// and surface Twilio / sheet errors clearly.
+// ════════════════════════════════════════════════════════════
+document.getElementById('signup-btn').addEventListener('click', async () => {
+  const name     = document.getElementById('signup-name').value.trim();
+  const rawPhone = document.getElementById('signup-phone').value.trim();
+  const loc      = document.getElementById('signup-location').value.trim();
+
+  if (!name)     { toast('⚠️ Please enter your name', 'error'); return; }
+  if (!rawPhone) { toast('⚠️ Please enter your phone number', 'error'); return; }
+
+  // Normalize phone: strip any leading +91 / 91 then re-add +91
+  const digits = rawPhone.replace(/^\+?91/, '').replace(/\D/g, '');
+  if (digits.length !== 10) { toast('⚠️ Enter a valid 10-digit number', 'error'); return; }
+  const phone = '+91' + digits;
+
+  const btn     = document.getElementById('signup-btn');
+  const btnText = document.getElementById('signup-btn-text');
+  btn.disabled  = true;
+  btnText.innerHTML = '<span class="spinner"></span> Registering…';
+
+  // Add a status line below the button
+  let statusEl = document.getElementById('signup-status');
+  if (!statusEl) {
+    statusEl = document.createElement('div');
+    statusEl.id = 'signup-status';
+    statusEl.style.cssText = 'text-align:center;font-size:11px;margin-top:6px;';
+    btn.parentNode.insertBefore(statusEl, btn.nextSibling);
+  }
+  statusEl.textContent = '';
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'register', name, phone, location: loc || 'India' })
+    });
+    const data = await res.json();
+
+    if (data.result === 'success') {
+      btnText.textContent = '✅ Registered — Check WhatsApp';
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = '📲 Welcome message sent to ' + phone;
+      toast('✅ Registered! Welcome to AlertIndia', 'success');
+    } else if (data.result === 'already_registered') {
+      btnText.textContent = '🟢 Register for Alerts';
+      btn.disabled = false;
+      statusEl.style.color = 'var(--amber)';
+      statusEl.textContent = '⚠️ ' + (data.message || 'Already registered with this number');
+      toast('Already registered — you\'re good!', '');
+    } else {
+      // Surface the actual error from GAS / Twilio
+      btnText.textContent = '🟢 Register for Alerts';
+      btn.disabled = false;
+      const errMsg = data.error || data.message || 'Registration failed. Try again.';
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = '❌ ' + errMsg;
+      toast('❌ ' + errMsg, 'error');
+    }
+  } catch (err) {
+    btnText.textContent = '🟢 Register for Alerts';
+    btn.disabled = false;
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = '❌ Network error — check connection';
+    toast('❌ Network error', 'error');
+    console.error('Signup error:', err);
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+// RATING
+// ════════════════════════════════════════════════════════════
+let selectedRating = 0;
+const starLabels = ['','Poor','Fair','Good','Very Good','Excellent!'];
+document.querySelectorAll('.star').forEach(s => {
+  s.addEventListener('click', () => {
+    selectedRating = parseInt(s.dataset.val, 10);
+    document.querySelectorAll('.star').forEach((x,i) => x.classList.toggle('active', i < selectedRating));
+    document.getElementById('star-label').textContent = starLabels[selectedRating];
+    document.getElementById('submit-rating-btn').disabled = false;
+  });
+});
+document.getElementById('submit-rating-btn').addEventListener('click', async () => {
+  if (!selectedRating) return;
+  const comment = document.getElementById('rating-comment').value.trim();
+  const btn = document.getElementById('submit-rating-btn');
+  btn.disabled = true;
+  document.getElementById('rating-btn-text').innerHTML = '<span class="spinner"></span> Submitting…';
+  await postAction({ action:'rating', rating:selectedRating, comment, district:'General' });
+  document.getElementById('rating-btn-text').textContent = '✅ Thanks for your feedback!';
+  toast('⭐ Rating submitted — thanks!', 'success');
+  loadReviews();
+  getAction('rating_count').then(d => {
+    if (d) {
+      document.getElementById('rating-count').textContent = d.rating_count;
+      document.getElementById('rating-count-header').textContent = d.rating_count + ' community ratings';
+    }
+  });
+});
+
+// ════════════════════════════════════════════════════════════
+// LOCATION SEARCH — header bar
+// ════════════════════════════════════════════════════════════
+document.getElementById('use-location-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('use-location-btn');
+  const icon = document.getElementById('loc-btn-icon');
+  icon.textContent = '⏳';
+  btn.disabled = true;
+  try {
+    if (!navigator.geolocation) throw new Error('Geolocation not supported');
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude, longitude } = pos.coords;
+        document.getElementById('location-search').value = latitude.toFixed(4) + ', ' + longitude.toFixed(4);
+        icon.textContent = '✅';
+        toast('📍 Location detected', 'success');
+        btn.disabled = false;
+      },
+      err => {
+        console.warn('Geolocation denied:', err.message);
+        icon.textContent = '📍';
+        toast('📍 Location blocked — type your city instead', 'error');
+        document.getElementById('location-search').focus();
+        btn.disabled = false;
+      },
+      { timeout: 6000, enableHighAccuracy: false }
+    );
+  } catch (e) {
+    console.warn('Geolocation Permissions Policy blocked:', e.message);
+    icon.textContent = '📍';
+    toast('📍 Type your location manually', 'error');
+    document.getElementById('location-search').focus();
+    btn.disabled = false;
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+// LOCATION SEARCH — hero bar
+// ════════════════════════════════════════════════════════════
+
+
+// ════════════════════════════════════════════════════════════
+// HAZARD FILTER TABS (UI only — visual filter)
+// ════════════════════════════════════════════════════════════
+document.querySelectorAll('.hazard-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.hazard-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+
+// ════════════════════════════════════════════════════════════
+// SENTINEL / ACOUSTIC INTELLIGENCE
+// ════════════════════════════════════════════════════════════
+let sentinelOn = false, micStream = null, audioCtx = null, rafId = null;
+
+document.getElementById('sentinel-btn').addEventListener('click', async () => {
+  const txt = document.getElementById('sentinel-btn-text');
+  const freqEl = document.getElementById('sentinel-freq');
+  const barEl = document.getElementById('sentinel-bar');
+  const statusEl = document.getElementById('sentinel-status-text');
+  const micEl = document.getElementById('sentinel-mic-text');
+  const badge = document.getElementById('sentinel-risk-badge');
+
+  sentinelOn = !sentinelOn;
+
+  if (sentinelOn) {
+    txt.innerHTML = '<span class="spinner"></span> Arming…';
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const src = audioCtx.createMediaStreamSource(micStream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 128;
+      src.connect(analyser);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+
+      txt.textContent = '🔴 Disarm Sentinel';
+      statusEl.textContent = 'Listening…';
+      statusEl.style.color = 'var(--green)';
+      micEl.textContent = 'Active';
+      micEl.style.color = 'var(--green)';
+      badge.textContent = 'Armed';
+      badge.className = 'badge badge-high';
+
+      const loop = () => {
+        if (!sentinelOn) return;
+        analyser.getByteFrequencyData(data);
+        const maxVal = Math.max(...data);
+        const peakIdx = data.indexOf(maxVal);
+        const hz = Math.round(peakIdx / data.length * (audioCtx.sampleRate / 2));
+        freqEl.textContent = hz + ' Hz';
+        barEl.style.width = Math.min(100, maxVal / 2.55) + '%';
+
+        if (maxVal > 200) {
+          statusEl.textContent = '⚠ Anomaly!';
+          statusEl.style.color = 'var(--red)';
+          postAction({ action:'drone', drone_id:'MIC_01', alert_type:'AcousticAnomaly',
+                       latitude:'22.5726', longitude:'88.3639', severity:'Medium' });
+        } else {
+          statusEl.textContent = 'Listening…';
+          statusEl.style.color = 'var(--green)';
+        }
+        rafId = requestAnimationFrame(loop);
+      };
+      loop();
+      toast('🎙️ Sentinel armed — mic active', 'success');
+    } catch(e) {
+      sentinelOn = false;
+      txt.textContent = '📡 Arm Sentinel';
+      statusEl.textContent = 'Mic denied';
+      toast('Mic access denied — sentinel offline', 'error');
+    }
+  } else {
+    txt.textContent = '📡 Arm Sentinel';
+    freqEl.textContent = '-- Hz';
+    barEl.style.width = '0%';
+    statusEl.textContent = 'Inactive';
+    statusEl.style.color = 'var(--muted)';
+    micEl.textContent = 'Off';
+    micEl.style.color = 'var(--muted)';
+    badge.textContent = 'Standby';
+    badge.className = 'badge badge-low';
+    if (rafId) cancelAnimationFrame(rafId);
+    if (micStream) micStream.getTracks().forEach(t => t.stop());
+    if (audioCtx) audioCtx.close();
+    micStream = audioCtx = null;
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+// BOOT
+// ════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  loadWeather();
+  loadReviews();
+
+  postAction({
+    action: 'visitor_ping',
+    page: 'home',
+    location: 'Kolkata, IN',
+    session_id: Math.random().toString(36).slice(2)
+  });
+
+  setInterval(loadWeather, 30000);
+
+  setTimeout(() => {
+    getAction('visitor_count').then(d => {
+      if (d && d.total != null) {
+        document.getElementById('visitor-count').textContent = d.total;
+        const inl = document.getElementById('visitor-count-inline');
+        if (inl) inl.textContent = d.total;
+      }
+    });
+  }, 1500);
+});
+</script>
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzNDte4I0SvNumeWiJzKQ9p5k54EOFZT798frD_-b8P67ZaLhPeO0hyQKmjLn1kanRW/exec";
+  function openAlertModal(icon, title, location, severity, details) {
+  document.getElementById('modal-icon').textContent = icon;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-location').textContent = location;
+  document.getElementById('modal-severity').innerHTML = '<span class="badge badge-' + severity.toLowerCase() + '">' + severity + '</span>';
+  document.getElementById('modal-details').innerHTML = details;
+  const overlay = document.getElementById('alert-modal-overlay');
+  overlay.style.display = 'flex';
+}
+
+function closeAlertModal() {
+  document.getElementById('alert-modal-overlay').style.display = 'none';
+}
+
+// ── ANTENNA CURSOR TRACKER ──
+// Points the satellite dish toward wherever the cursor is on screen
+document.addEventListener('mousemove', function(e) {
+  const antenna = document.getElementById('antenna-group');
+  const svg     = document.getElementById('satellite-3d');
+  if (!antenna || !svg) return;
+
+  const rect   = svg.getBoundingClientRect();
+  // Antenna pivot is at SVG coordinate (60, 28) — map to screen space
+  const pivotX = rect.left + (60 / 120) * rect.width;
+  const pivotY = rect.top  + (28 / 100) * rect.height;
+
+  const dx  = e.clientX - pivotX;
+  const dy  = e.clientY - pivotY;
+  // atan2 gives angle from pivot to cursor; subtract 90° so antenna points UP by default
+  const deg = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+
+  antenna.style.transform = `rotate(${deg}deg)`;
+});
+function openWhatsAppModal() {
+  document.getElementById('modal-icon').textContent = '📱';
+  document.getElementById('modal-title').textContent = 'Get WhatsApp Alerts';
+  document.getElementById('modal-location').textContent = 'Earliest warnings · Free · India';
+  document.getElementById('modal-severity').innerHTML = '<span class="badge badge-low">Free</span>';
+  document.getElementById('modal-details').innerHTML = `
+    <div style="background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.25);border-radius:8px;padding:12px;margin-bottom:12px;">
+      <div style="color:var(--green);font-weight:bold;margin-bottom:6px;">📱 STEP 1 — Join WhatsApp First</div>
+      <div style="font-size:11px;line-height:1.8;">
+        Open WhatsApp and message <b>+1 415 523 8886</b><br>
+        Send exactly: <span style="color:var(--cyan);font-family:monospace;">join &lt;sandbox-word&gt;</span><br>
+        Wait for Twilio's confirmation, then register below ✅
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <input id="modal-name" type="text" placeholder="Your name" style="padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;outline:none;"/>
+      <input id="modal-phone" type="tel" placeholder="10-digit number (91 added auto)" style="padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;outline:none;"/>
+      <input id="modal-location-input" type="text" placeholder="District" style="padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;outline:none;"/>
+      <button onclick="registerFromModal()" style="padding:12px;background:var(--green);color:#000;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;">🔔 Register for Alerts</button>
+      <div id="modal-register-msg" style="text-align:center;font-size:12px;color:var(--green);"></div>
+    </div>
+  `;
+  document.getElementById('modal-details').style.fontSize = '13px';
+  const overlay = document.getElementById('alert-modal-overlay');
+  overlay.style.display = 'flex';
+}
+
+function registerFromModal() {
+  const name = document.getElementById('modal-name').value.trim();
+  const phone = document.getElementById('modal-phone').value.trim();
+  const loc = document.getElementById('modal-location-input').value.trim();
+  const msgEl = document.getElementById('modal-register-msg');
+
+  if (!name || !phone) {
+    msgEl.textContent = '⚠️ Please enter name and phone';
+    msgEl.style.color = 'var(--red)';
+    return;
+  }
+
+  const digits = phone.replace(/^\+?91/, '').replace(/\D/g, '');
+  if (digits.length !== 10) {
+    msgEl.textContent = '⚠️ Enter a valid 10-digit number';
+    msgEl.style.color = 'var(--red)';
+    return;
+  }
+  const formattedPhone = '+91' + digits;
+
+  msgEl.textContent = '⏳ Registering…';
+  msgEl.style.color = 'var(--muted)';
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'register', name, phone: formattedPhone, location: loc || 'India' })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.result === 'success') {
+      msgEl.textContent = '✅ Registered! Check WhatsApp for welcome message.';
+      msgEl.style.color = 'var(--green)';
+    } else if (d.result === 'already_registered') {
+      msgEl.textContent = '⚠️ ' + (d.message || 'Already registered with this number');
+      msgEl.style.color = 'var(--amber)';
+    } else {
+      const errMsg = d.error || d.message || 'Registration failed. Try again.';
+      msgEl.textContent = '❌ ' + errMsg;
+      msgEl.style.color = 'var(--red)';
+    }
+  })
+  .catch(err => {
+    msgEl.textContent = '❌ Network error — check connection';
+    msgEl.style.color = 'var(--red)';
+    console.error('Modal register error:', err);
+  });
+}
+// ════════════════════════════════════════════════════════════
+// LOCATION SEARCH — type a city/town name → get live weather
+// ════════════════════════════════════════════════════════════
+
+// Called by Search button or Enter key
+async function searchByName(overrideQuery) {
+  const query = overrideQuery ||
+                document.getElementById('hero-location-search').value.trim() ||
+                document.getElementById('location-search').value.trim();
+
+  if (!query) { toast('⚠️ Enter a city or district name', 'error'); return; }
+
+  const btn = document.querySelector('.hero-search-btn-go');
+  const orig = btn ? btn.textContent : '';
+  if (btn) btn.textContent = '⏳ Searching…';
+
+  try {
+    // Nominatim geocoding — name → lat/lon (free, no API key)
+    const geoRes = await fetch(
+      'https://nominatim.openstreetmap.org/search?q=' +
+      encodeURIComponent(query + ', India') +
+      '&format=json&limit=1&accept-language=en',
+      { headers: { 'Accept-Language': 'en' } }
+    );
+    const geoData = await geoRes.json();
+
+    if (!geoData || geoData.length === 0) {
+      toast('❌ Location not found — try a different name', 'error');
+      if (btn) btn.textContent = orig;
+      return;
+    }
+
+    const lat = parseFloat(geoData[0].lat);
+    const lon = parseFloat(geoData[0].lon);
+    const displayName = geoData[0].display_name.split(',').slice(0, 2).join(',').trim();
+
+    // Sync both search inputs
+    document.getElementById('hero-location-search').value = displayName;
+    const hdr = document.getElementById('location-search');
+    if (hdr) hdr.value = displayName;
+
+    toast('📍 Showing weather for ' + displayName, 'success');
+    await searchLocation(lat, lon, displayName);
+    if (typeof updateMapLocation === 'function') updateMapLocation(lat, lon, displayName);
+
+  } catch (err) {
+    toast('❌ Search failed — check connection', 'error');
+    console.error('Search error:', err);
+  }
+
+  if (btn) btn.textContent = orig;
+}
+
+// Called by both searchByName and useMyLocation
+// Fetches weather/AQI for given lat/lon and updates all stat cards
+async function searchLocation(lat, lon, label) {
+  try {
+    // Fetch weather directly from Open-Meteo (same API your GAS uses)
+    const [weatherRes, aqiRes] = await Promise.all([
+      fetch(
+        'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
+        '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code'
+      ).then(r => r.json()),
+      fetch(
+        'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' + lat +
+        '&longitude=' + lon + '&current=pm10,pm2_5,us_aqi'
+      ).then(r => r.json())
+    ]);
+
+    const w = weatherRes.current;
+    const q = aqiRes.current;
+
+    // Update stat strip
+    document.getElementById('live-temp').textContent     = Math.round(w.temperature_2m)    + '°C';
+    document.getElementById('live-feels').textContent    = Math.round(w.apparent_temperature) + '°C';
+    document.getElementById('live-humidity').textContent = Math.round(w.relative_humidity_2m) + '%';
+    document.getElementById('live-wind').textContent     = Math.round(w.wind_speed_10m);
+    document.getElementById('live-updated').textContent  = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+    if (q && q.us_aqi != null) {
+      const aqi = Math.round(q.us_aqi);
+      document.getElementById('live-aqi').textContent      = aqi;
+      document.getElementById('aqi-bar-text').textContent  = aqi + ' / 500';
+      document.getElementById('aqi-bar').style.width       = Math.min(100, aqi / 5) + '%';
+      document.getElementById('pm25-val').textContent      = (q.pm2_5 || '--') + ' µg';
+      document.getElementById('pm10-val').textContent      = (q.pm10  || '--') + ' µg';
+      const cat = aqiCategory(aqi);
+      const badge = document.getElementById('aqi-badge');
+      badge.textContent = cat.label;
+      badge.className   = 'badge ' + cat.cls;
+      // Update AQI card location label
+      const aqiLoc = document.getElementById('aqi-location');
+      if (aqiLoc && label) aqiLoc.textContent = label + ' · Live Data';
+    }
+
+  } catch (err) {
+    toast('❌ Could not fetch weather for this location', 'error');
+    console.error('searchLocation error:', err);
+  }
+}
+
+  function useMyLocation() {
+  if (!navigator.geolocation) {
+    toast('❌ Your browser does not support location detection', 'error');
+    return;
+  }
+  const btn = document.getElementById("hero-use-location-btn");
+  btn.innerHTML = '<span>📍</span> Locating...';
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      btn.innerHTML = '<span>✅</span> Location found';
+      fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat + '&longitude=' + lon + '&localityLanguage=en')
+        .then(r => r.json())
+        .then(d => {
+          const city = d.city || d.locality || d.principalSubdivision || "";
+          const state = d.principalSubdivision || "";
+          const label = city ? city + (state && state !== city ? ", " + state : "") : lat.toFixed(4) + ", " + lon.toFixed(4);
+          document.getElementById('hero-location-search').value = label;
+          const h = document.getElementById('location-search');
+          if (h) h.value = label;
+          toast('📍 Location detected: ' + label, 'success');
+        })
+        .catch(() => {
+          document.getElementById('hero-location-search').value = lat.toFixed(4) + ", " + lon.toFixed(4);
+        });
+      if (typeof searchLocation === "function") {
+        searchLocation(lat, lon);
+      } else if (typeof loadWeather === "function") {
+        loadWeather(lat, lon);
+      }
+      // update map card to GPS location
+      fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat + '&longitude=' + lon + '&localityLanguage=en')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          var city = d.city || d.locality || d.principalSubdivision || '';
+          var state = d.principalSubdivision || '';
+          var lbl = city ? city + (state && state !== city ? ', ' + state : '') : lat.toFixed(4) + ', ' + lon.toFixed(4);
+          if (typeof updateMapLocation === 'function') updateMapLocation(lat, lon, lbl);
+        })
+        .catch(function() {
+          if (typeof updateMapLocation === 'function') updateMapLocation(lat, lon, lat.toFixed(4) + ', ' + lon.toFixed(4));
+        });
+    },
+    function(err) {
+      btn.innerHTML = '<span>🎯</span> Use My Location';
+      if (err.code === 1) {
+        // PERMISSION_DENIED
+        toast('❌ Location blocked — allow in browser settings and retry', 'error');
+      } else if (err.code === 2) {
+        // POSITION_UNAVAILABLE
+        toast('❌ Location unavailable — check GPS/network', 'error');
+      } else {
+        // TIMEOUT or other
+        toast('❌ Location timed out — try again', 'error');
+      }
+    },
+    { timeout: 10000, maximumAge: 60000 }
+  );
+}
+window.onload = function() {
+  if (typeof loadWeather === "function") loadWeather();
+};
+
+// ── EMERGENCY MAP CARD ──
+var _mapLat = 22.5726, _mapLon = 88.3639, _mapLabel = 'Kolkata', _mapType = 'hospital';
+var _mapTerms = { hospital:'hospitals', police:'police stations', fire:'fire stations', pharmacy:'pharmacies' };
+var _mapEmoji = { hospital:'🏥', police:'👮', fire:'🚒', pharmacy:'💊' };
+
+function mapRefresh() {
+  var label = _mapLabel, type = _mapType;
+  var term  = _mapTerms[type] || 'hospitals';
+  var emoji = _mapEmoji[type] || '📍';
+  var q     = encodeURIComponent(term + ' near ' + label);
+
+  var pinEl = document.getElementById('map-pin-label');
+  var catEl = document.getElementById('map-cat-label');
+  var cardLbl = document.getElementById('map-card-label');
+  var gmBtn = document.getElementById('map-gmaps-btn');
+  var osmBtn = document.getElementById('map-osm-btn');
+
+  if (pinEl) pinEl.textContent = label;
+  if (catEl) catEl.textContent = emoji + ' ' + term + ' nearby';
+  if (cardLbl) cardLbl.textContent = label + ' · Live Location';
+  if (gmBtn) gmBtn.href = 'https://www.google.com/maps/search/' + q + '/@' + _mapLat + ',' + _mapLon + ',14z';
+  if (osmBtn) osmBtn.href = 'https://www.openstreetmap.org/?mlat=' + _mapLat + '&mlon=' + _mapLon + '&zoom=14';
+
+  // update pill styles
+  ['hospital','police','fire','pharmacy'].forEach(function(t) {
+    var el = document.getElementById('mpill-' + t);
+    if (!el) return;
+    if (t === type) {
+      el.style.background = 'rgba(0,198,255,.12)';
+      el.style.color = 'var(--cyan)';
+      el.style.borderColor = 'var(--cyan)';
+    } else {
+      el.style.background = 'var(--card)';
+      el.style.color = 'var(--muted)';
+      el.style.borderColor = 'var(--border)';
+    }
+  });
+}
+
+function mapShowLayer(type) {
+  _mapType = type;
+  mapRefresh();
+}
+
+// called by searchByName and useMyLocation to update the map card
+function updateMapLocation(lat, lon, label) {
+  _mapLat = lat; _mapLon = lon; _mapLabel = label || 'Location';
+  mapRefresh();
+}
+
+// init on load
+window.addEventListener('load', function() { setTimeout(mapRefresh, 300); });
+  
+</script>
+
+<!-- ════════════════════════════════════════════════════════════
+     MAP MODAL
+════════════════════════════════════════════════════════════ -->
+<div id="map-modal-overlay" onclick="closeMapModal()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center;">
+  <div onclick="event.stopPropagation()" style="background:var(--card);border:1px solid rgba(0,198,255,.3);border-top:2px solid var(--cyan);border-radius:16px;padding:24px;max-width:460px;width:90%;position:relative;max-height:88vh;overflow-y:auto;">
+    <button onclick="closeMapModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+
+    <!-- Header -->
+    <div class="flex items-start justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <span style="font-size:1.3rem;">🗺️</span>
+        <div>
+          <div style="font-weight:700;font-size:1rem;">Emergency Map</div>
+          <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);" id="modal-map-card-label">Kolkata · Live Location</div>
+        </div>
+      </div>
+      <span class="badge badge-low">Live</span>
+    </div>
+
+    <!-- Category pills (modal copies — all wired to same mapShowLayer) -->
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;">
+      <button onclick="mapShowLayer('hospital');syncModalMapUI()" id="modal-mpill-hospital" style="padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:rgba(0,198,255,.12);color:var(--cyan);font-size:11px;cursor:pointer;">🏥 Hospitals</button>
+      <button onclick="mapShowLayer('police');syncModalMapUI()"   id="modal-mpill-police"   style="padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:11px;cursor:pointer;">👮 Police</button>
+      <button onclick="mapShowLayer('fire');syncModalMapUI()"     id="modal-mpill-fire"     style="padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:11px;cursor:pointer;">🚒 Fire</button>
+      <button onclick="mapShowLayer('pharmacy');syncModalMapUI()" id="modal-mpill-pharmacy" style="padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:11px;cursor:pointer;">💊 Pharmacy</button>
+    </div>
+
+    <!-- Visual map with pulse rings -->
+    <div style="height:200px;border-radius:10px;border:1px solid var(--border);background:radial-gradient(ellipse at center,#0d1f35 0%,#050c1a 100%);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+      <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.12" xmlns="http://www.w3.org/2000/svg">
+        <defs><pattern id="mg2" width="30" height="30" patternUnits="userSpaceOnUse">
+          <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#00c6ff" stroke-width="0.5"/>
+        </pattern></defs>
+        <rect width="100%" height="100%" fill="url(#mg2)"/>
+      </svg>
+      <div style="position:absolute;width:70px;height:70px;border-radius:50%;border:1px solid rgba(0,198,255,0.6);animation:mpulse 2s ease-out infinite;"></div>
+      <div style="position:absolute;width:120px;height:120px;border-radius:50%;border:1px solid rgba(0,198,255,0.3);animation:mpulse 2s ease-out infinite;animation-delay:0.6s;"></div>
+      <div style="position:absolute;width:180px;height:180px;border-radius:50%;border:1px solid rgba(0,198,255,0.12);animation:mpulse 2s ease-out infinite;animation-delay:1.2s;"></div>
+      <div style="position:relative;z-index:2;text-align:center;">
+        <div style="font-size:30px;filter:drop-shadow(0 0 10px var(--cyan));">📍</div>
+        <div id="modal-map-pin-label" style="color:var(--cyan);font-size:12px;font-weight:600;margin-top:4px;">Kolkata</div>
+        <div id="modal-map-cat-label" style="color:var(--muted);font-size:10px;">🏥 hospitals nearby</div>
+      </div>
+    </div>
+
+    <!-- Open map buttons -->
+    <div style="display:flex;gap:8px;">
+      <a id="modal-map-gmaps-btn" href="https://www.google.com/maps/search/hospitals+near+Kolkata/@22.5726,88.3639,14z" target="_blank"
+         style="flex:1;text-align:center;padding:10px 6px;background:rgba(0,198,255,.1);border:1px solid var(--cyan);border-radius:10px;color:var(--cyan);font-size:12px;text-decoration:none;font-weight:700;">
+        🗺️ Google Maps
+      </a>
+      <a id="modal-map-osm-btn" href="https://www.openstreetmap.org/?mlat=22.5726&mlon=88.3639&zoom=14" target="_blank"
+         style="flex:1;text-align:center;padding:10px 6px;background:rgba(0,229,160,.06);border:1px solid var(--green);border-radius:10px;color:var(--green);font-size:12px;text-decoration:none;font-weight:700;">
+        🌍 OpenStreetMap
+      </a>
+    </div>
+
+    <button onclick="closeMapModal()" style="width:100%;margin-top:14px;padding:10px;background:var(--cyan);color:#000;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:13px;">Close</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     CIVIL ALERT MODAL
+════════════════════════════════════════════════════════════ -->
+<div id="civil-modal-overlay" onclick="closeCivilModal()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center;">
+  <div onclick="event.stopPropagation()" style="background:var(--card);border:1px solid rgba(255,71,87,.3);border-top:2px solid var(--red);border-radius:16px;padding:24px;max-width:480px;width:90%;position:relative;max-height:88vh;overflow-y:auto;">
+    <button onclick="closeCivilModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+
+    <!-- Header -->
+    <div class="flex items-start justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <span style="font-size:1.3rem;">🚨</span>
+        <div>
+          <div style="font-weight:700;font-size:1rem;">Civil Alert Zone</div>
+          <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);">West Bengal · Live Intel</div>
+        </div>
+      </div>
+      <span class="badge" style="background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.3);">HIGH RISK</span>
+    </div>
+
+    <!-- Civil events -->
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+
+      <div style="background:rgba(255,71,87,.06);border:1px solid rgba(255,71,87,.2);border-radius:8px;padding:10px 12px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+          <span style="font-size:12px;font-weight:700;color:var(--red);">⚠️ Political Rally</span>
+          <span style="font-size:10px;color:var(--muted);font-family:monospace;">TODAY</span>
+        </div>
+        <div style="font-size:11px;color:var(--text);line-height:1.6;">
+          <b style="color:var(--amber);">Brigade Parade Ground → Red Road</b><br>
+          <span style="color:var(--muted);">Start: 2:00 PM · Est. crowd: 50,000+</span><br>
+          <span style="color:var(--muted);">Route risk: Medium · Disperse: ~8 PM</span>
+        </div>
+      </div>
+
+      <div style="background:rgba(245,166,35,.06);border:1px solid rgba(245,166,35,.2);border-radius:8px;padding:10px 12px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+          <span style="font-size:12px;font-weight:700;color:var(--amber);">🔴 Red Zone — Tension</span>
+          <span style="font-size:10px;color:var(--muted);font-family:monospace;">ACTIVE</span>
+        </div>
+        <div style="font-size:11px;color:var(--text);line-height:1.6;">
+          <b style="color:var(--amber);">Barrackpore · North 24 Parganas</b><br>
+          <span style="color:var(--muted);">Communal tension reported · Sec 144 active</span><br>
+          <span style="color:var(--muted);">Avoid: NH-12 between 6 PM–10 PM</span>
+        </div>
+      </div>
+
+      <div style="background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:8px;padding:10px 12px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+          <span style="font-size:12px;font-weight:700;color:var(--purple);">🗳️ Election Alert</span>
+          <span style="font-size:10px;color:var(--muted);font-family:monospace;">48 HRS</span>
+        </div>
+        <div style="font-size:11px;color:var(--text);line-height:1.6;">
+          <b style="color:var(--purple);">By-election · South 24 Parganas</b><br>
+          <span style="color:var(--muted);">Heavy police deployment expected</span><br>
+          <span style="color:var(--muted);">Polling booths: 847 · Sensitive: 112</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Divider + Emergency Speed Dial -->
+    <div style="border-top:1px solid var(--border);padding-top:12px;">
+      <div style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:9px;">EMERGENCY SPEED DIAL</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+
+        <a href="tel:100" style="text-decoration:none;">
+          <div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:background .2s;"
+               onmouseover="this.style.background='rgba(59,130,246,.2)'" onmouseout="this.style.background='rgba(59,130,246,.1)'">
+            <span style="font-size:18px;">👮</span>
+            <div><div style="font-size:9px;color:#93c5fd;font-weight:700;">POLICE</div><div style="font-size:15px;font-weight:800;color:#fff;font-family:monospace;">100</div></div>
+            <span style="margin-left:auto;font-size:11px;color:#93c5fd;">📞</span>
+          </div>
+        </a>
+
+        <a href="tel:108" style="text-decoration:none;">
+          <div style="background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.3);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:background .2s;"
+               onmouseover="this.style.background='rgba(255,71,87,.2)'" onmouseout="this.style.background='rgba(255,71,87,.1)'">
+            <span style="font-size:18px;">🚑</span>
+            <div><div style="font-size:9px;color:#fca5a5;font-weight:700;">AMBULANCE</div><div style="font-size:15px;font-weight:800;color:#fff;font-family:monospace;">108</div></div>
+            <span style="margin-left:auto;font-size:11px;color:#fca5a5;">📞</span>
+          </div>
+        </a>
+
+        <a href="tel:101" style="text-decoration:none;">
+          <div style="background:rgba(255,107,53,.1);border:1px solid rgba(255,107,53,.3);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:background .2s;"
+               onmouseover="this.style.background='rgba(255,107,53,.2)'" onmouseout="this.style.background='rgba(255,107,53,.1)'">
+            <span style="font-size:18px;">🚒</span>
+            <div><div style="font-size:9px;color:#fdba74;font-weight:700;">FIRE</div><div style="font-size:15px;font-weight:800;color:#fff;font-family:monospace;">101</div></div>
+            <span style="margin-left:auto;font-size:11px;color:#fdba74;">📞</span>
+          </div>
+        </a>
+
+        <a href="tel:1091" style="text-decoration:none;">
+          <div style="background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:background .2s;"
+               onmouseover="this.style.background='rgba(168,85,247,.2)'" onmouseout="this.style.background='rgba(168,85,247,.1)'">
+            <span style="font-size:18px;">👩</span>
+            <div><div style="font-size:9px;color:#d8b4fe;font-weight:700;">WOMEN HELP</div><div style="font-size:15px;font-weight:800;color:#fff;font-family:monospace;">1091</div></div>
+            <span style="margin-left:auto;font-size:11px;color:#d8b4fe;">📞</span>
+          </div>
+        </a>
+
+        <a href="tel:1078" style="text-decoration:none;">
+          <div style="background:rgba(0,198,255,.1);border:1px solid rgba(0,198,255,.3);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:background .2s;"
+               onmouseover="this.style.background='rgba(0,198,255,.2)'" onmouseout="this.style.background='rgba(0,198,255,.1)'">
+            <span style="font-size:18px;">🆘</span>
+            <div><div style="font-size:9px;color:#7dd3fc;font-weight:700;">DISASTER</div><div style="font-size:15px;font-weight:800;color:#fff;font-family:monospace;">1078</div></div>
+            <span style="margin-left:auto;font-size:11px;color:#7dd3fc;">📞</span>
+          </div>
+        </a>
+
+        <a href="tel:1098" style="text-decoration:none;">
+          <div style="background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.25);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:background .2s;"
+               onmouseover="this.style.background='rgba(0,229,160,.18)'" onmouseout="this.style.background='rgba(0,229,160,.08)'">
+            <span style="font-size:18px;">👶</span>
+            <div><div style="font-size:9px;color:#6ee7b7;font-weight:700;">CHILD HELP</div><div style="font-size:15px;font-weight:800;color:#fff;font-family:monospace;">1098</div></div>
+            <span style="margin-left:auto;font-size:11px;color:#6ee7b7;">📞</span>
+          </div>
+        </a>
+
+      </div>
+
+      <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:10px;">
+        Tap any number to open your phone's dialer
+      </div>
+    </div>
+
+    <button onclick="closeCivilModal()" style="width:100%;margin-top:14px;padding:10px;background:var(--red);color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:13px;">Close</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// MAP MODAL
+// ════════════════════════════════════════════════════════════
+function openMapModal() {
+  // Sync modal labels and links from current live state before showing
+  syncModalMapUI();
+  document.getElementById('map-modal-overlay').style.display = 'flex';
+}
+function closeMapModal() {
+  document.getElementById('map-modal-overlay').style.display = 'none';
+}
+
+// Keeps modal map in sync with whatever category/location is selected
+function syncModalMapUI() {
+  var pinLbl  = document.getElementById('map-pin-label');
+  var catLbl  = document.getElementById('map-cat-label');
+  var cardLbl = document.getElementById('map-card-label');
+  var gBtn    = document.getElementById('map-gmaps-btn');
+  var oBtn    = document.getElementById('map-osm-btn');
+
+  if (pinLbl)  document.getElementById('modal-map-pin-label').textContent = pinLbl.textContent;
+  if (catLbl)  document.getElementById('modal-map-cat-label').textContent = catLbl.textContent;
+  if (cardLbl) document.getElementById('modal-map-card-label').textContent = cardLbl.textContent;
+  if (gBtn)    document.getElementById('modal-map-gmaps-btn').href = gBtn.href;
+  if (oBtn)    document.getElementById('modal-map-osm-btn').href   = oBtn.href;
+
+  // Sync pill active states
+  ['hospital','police','fire','pharmacy'].forEach(function(t) {
+    var card  = document.getElementById('mpill-' + t);
+    var modal = document.getElementById('modal-mpill-' + t);
+    if (card && modal) {
+      modal.style.background   = card.style.background;
+      modal.style.color        = card.style.color;
+      modal.style.borderColor  = card.style.borderColor;
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// CIVIL ALERT MODAL
+// ════════════════════════════════════════════════════════════
+function openCivilModal() {
+  document.getElementById('civil-modal-overlay').style.display = 'flex';
+}
+function closeCivilModal() {
+  document.getElementById('civil-modal-overlay').style.display = 'none';
+}
+</script>
+
+<!-- ════════════════════════════════════════════════════════════
+     WOMEN SAFETY — GUARDIAN SHIELD MODAL
+════════════════════════════════════════════════════════════ -->
+<style>
+@keyframes wsPulseCard { 0%,100%{opacity:.4} 50%{opacity:1} }
+@keyframes wsSosPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(244,114,182,.7); }
+  70%  { box-shadow: 0 0 0 18px rgba(244,114,182,0); }
+  100% { box-shadow: 0 0 0 0 rgba(244,114,182,0); }
+}
+@keyframes wsRingOut {
+  0%   { transform:translate(-50%,-50%) scale(0); opacity:.9; }
+  100% { transform:translate(-50%,-50%) scale(1.6); opacity:0; }
+}
+.ws-sos-armed { animation: wsSosPulse 1.4s infinite; }
+.ws-contact-chip {
+  display:flex; align-items:center; justify-content:space-between;
+  background:rgba(244,114,182,.07); border:1px solid rgba(244,114,182,.2);
+  border-radius:10px; padding:9px 12px; margin-bottom:7px;
+  transition:background .2s;
+}
+.ws-contact-chip:hover { background:rgba(244,114,182,.13); }
+.ws-input {
+  width:100%; padding:10px 14px; border-radius:10px;
+  border:1px solid var(--border); background:rgba(255,255,255,.04);
+  color:var(--text); font-size:.88rem; outline:none;
+  font-family:'Space Grotesk',sans-serif; transition:border-color .2s;
+}
+.ws-input:focus { border-color:#f472b6; box-shadow:0 0 0 3px rgba(244,114,182,.1); }
+.ws-input::placeholder { color:var(--muted); }
+.ws-btn-danger {
+  background:linear-gradient(135deg,#be185d,#f43f5e);
+  color:#fff; font-weight:800; font-size:.95rem; border:none;
+  border-radius:14px; cursor:pointer; width:100%;
+  padding:16px; letter-spacing:.03em;
+  transition:all .2s; position:relative; overflow:hidden;
+}
+.ws-btn-danger:active { transform:scale(.97); }
+.ws-btn-safe {
+  background:linear-gradient(135deg,#065f46,#10b981);
+  color:#fff; font-weight:700; font-size:.88rem; border:none;
+  border-radius:12px; cursor:pointer; width:100%;
+  padding:13px; transition:all .2s;
+}
+.ws-btn-safe:active { transform:scale(.97); }
+.ws-section-label {
+  font-family:'JetBrains Mono',monospace; font-size:.6rem;
+  font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:10px;
+  display:flex; align-items:center; gap:8px;
+}
+.ws-section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+</style>
+
+<div id="ws-modal-overlay" onclick="wsHandleOverlayClick(event)"
+     style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+            background:rgba(0,0,0,.75);backdrop-filter:blur(10px);
+            z-index:9999;align-items:center;justify-content:center;">
+
+  <div onclick="event.stopPropagation()"
+       style="background:var(--card);border:1px solid rgba(244,114,182,.35);
+              border-top:2px solid #f472b6;border-radius:18px;padding:26px 24px 24px;
+              max-width:480px;width:92%;max-height:90vh;overflow-y:auto;position:relative;
+              box-shadow:0 0 60px rgba(244,114,182,.12);">
+
+    <!-- Close -->
+    <button onclick="closeWomenSafetyModal()"
+            style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,.06);
+                   border:1px solid var(--border);color:var(--muted);font-size:16px;
+                   width:32px;height:32px;border-radius:50%;cursor:pointer;
+                   display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+      <span style="font-size:1.8rem;filter:drop-shadow(0 0 10px rgba(244,114,182,.8))">🛡️</span>
+      <div>
+        <div style="font-weight:800;font-size:1.1rem;color:#f9a8d4;letter-spacing:-.01em;">Guardian Shield</div>
+        <div style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--muted);letter-spacing:.08em;">WOMEN SAFETY · SOS SYSTEM</div>
+      </div>
+    </div>
+
+    <!-- Live location strip -->
+    <div id="ws-location-strip"
+         style="background:rgba(244,114,182,.07);border:1px solid rgba(244,114,182,.2);
+                border-radius:10px;padding:9px 12px;margin-bottom:18px;
+                display:flex;align-items:center;gap:8px;font-size:.78rem;">
+      <span style="font-size:1rem;">📍</span>
+      <div>
+        <div style="color:#f9a8d4;font-weight:600;" id="ws-location-label">Getting your location…</div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:1px;" id="ws-coords-label">—</div>
+      </div>
+      <button onclick="wsRefreshLocation()"
+              style="margin-left:auto;background:rgba(244,114,182,.15);border:1px solid rgba(244,114,182,.3);
+                     color:#f472b6;border-radius:8px;padding:4px 10px;font-size:.7rem;cursor:pointer;white-space:nowrap;">
+        🔄 Refresh
+      </button>
+    </div>
+
+    <!-- ── YOUR NAME (for SOS message) ── -->
+    <div class="ws-section-label">Your Identity</div>
+    <input class="ws-input" id="ws-user-name" type="text" placeholder="Your name (used in SOS message)"
+           style="margin-bottom:14px;" oninput="wsSaveState()"/>
+
+    <!-- ── EMERGENCY CONTACTS ── -->
+    <div class="ws-section-label">Guardian Contacts <span style="color:#f472b6;font-size:.65rem;normal-case">(up to 5)</span></div>
+
+    <div id="ws-contacts-list" style="margin-bottom:10px;"></div>
+
+    <!-- Add contact row -->
+    <div style="display:flex;gap:8px;margin-bottom:18px;" id="ws-add-row">
+      <input class="ws-input" id="ws-new-contact-name" type="text" placeholder="Contact name"
+             style="flex:1;" onkeydown="if(event.key==='Enter')wsAddContact()"/>
+      <input class="ws-input" id="ws-new-contact-phone" type="tel" placeholder="+91 number"
+             style="flex:1;" onkeydown="if(event.key==='Enter')wsAddContact()"/>
+      <button onclick="wsAddContact()"
+              style="background:rgba(244,114,182,.15);border:1px solid rgba(244,114,182,.35);
+                     color:#f472b6;border-radius:10px;padding:0 16px;cursor:pointer;
+                     font-weight:700;font-size:.9rem;white-space:nowrap;">
+        + Add
+      </button>
+    </div>
+
+    <!-- ── SOS BUTTONS ── -->
+    <div class="ws-section-label">Emergency Actions</div>
+
+    <!-- DANGER button -->
+    <div style="position:relative;margin-bottom:10px;">
+      <!-- expanding ring effect on active -->
+      <div id="ws-sos-ring" style="display:none;position:absolute;top:50%;left:50%;width:100%;height:100%;
+           border-radius:14px;border:2px solid #f43f5e;pointer-events:none;
+           animation:wsRingOut 1s ease-out forwards;"></div>
+      <button class="ws-btn-danger" id="ws-sos-btn" onclick="wsTriggerSOS()">
+        🚨 &nbsp;I NEED HELP — Send SOS Now
+      </button>
+    </div>
+
+    <!-- Status message after SOS -->
+    <div id="ws-sos-status" style="display:none;text-align:center;font-size:.8rem;
+         color:#f472b6;margin-bottom:10px;padding:8px;
+         background:rgba(244,114,182,.08);border-radius:8px;border:1px solid rgba(244,114,182,.2);">
+    </div>
+
+    <!-- SAFE button — shown after SOS -->
+    <div id="ws-safe-section" style="display:none;">
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-bottom:8px;">
+        Were you able to resolve this? Let your contacts know you're safe:
+      </div>
+      <button class="ws-btn-safe" onclick="wsSendSafe()">
+        ✅ &nbsp;I'm Safe Now — Cancel Alert
+      </button>
+    </div>
+
+    <!-- Info footer -->
+    <div style="margin-top:16px;padding:10px 12px;background:rgba(255,255,255,.03);border-radius:10px;font-size:.7rem;color:var(--muted);line-height:1.7;">
+      <b style="color:#f9a8d4;">How it works:</b><br>
+      🚨 <b>SOS</b> — sends your live location + name to all guardians <em>and</em> nearest police via WhatsApp.<br>
+      ✅ <b>I'm Safe</b> — sends a follow-up cancellation message so no one worries.<br>
+      📍 Location link is from Google Maps so contacts can navigate to you.
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// GUARDIAN SHIELD — WOMEN SAFETY MODULE
+// ════════════════════════════════════════════════════════════
+
+// State
+var _wsContacts = [];      // [{name, phone}]
+var _wsUserName = '';
+var _wsLat = null, _wsLon = null;
+var _wsSOSActive = false;
+var _wsWatchId = null;
+
+// ── OPEN / CLOSE ──
+function openWomenSafetyModal() {
+  wsLoadState();
+  wsRenderContacts();
+  wsRefreshLocation();
+  document.getElementById('ws-modal-overlay').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeWomenSafetyModal() {
+  // Only allow closing if no active SOS — or confirm
+  if (_wsSOSActive) {
+    if (!confirm('⚠️ An SOS is active! Are you sure you want to close? (Send "I\'m Safe" first if you\'re okay)')) return;
+  }
+  document.getElementById('ws-modal-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+  // stop watching location
+  if (_wsWatchId !== null) { navigator.geolocation.clearWatch(_wsWatchId); _wsWatchId = null; }
+}
+function wsHandleOverlayClick(e) {
+  if (e.target === document.getElementById('ws-modal-overlay')) {
+    closeWomenSafetyModal();
+  }
+}
+
+// ── LOCATION ──
+function wsRefreshLocation() {
+  var lbl  = document.getElementById('ws-location-label');
+  var coords = document.getElementById('ws-coords-label');
+  lbl.textContent = '🔄 Locating…';
+
+  if (!navigator.geolocation) {
+    lbl.textContent = '⚠️ Geolocation not supported';
+    return;
+  }
+
+  // Start continuous watch so location stays fresh
+  if (_wsWatchId !== null) navigator.geolocation.clearWatch(_wsWatchId);
+  _wsWatchId = navigator.geolocation.watchPosition(
+    function(pos) {
+      _wsLat = pos.coords.latitude;
+      _wsLon = pos.coords.longitude;
+      var acc = Math.round(pos.coords.accuracy);
+      lbl.textContent = '📍 Location acquired';
+      coords.textContent = _wsLat.toFixed(5) + ', ' + _wsLon.toFixed(5) + ' (±' + acc + 'm)';
+    },
+    function(err) {
+      lbl.textContent = '⚠️ Could not get location — tap Refresh';
+      coords.textContent = err.message;
+    },
+    { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+  );
+}
+
+function wsMapsLink() {
+  if (_wsLat && _wsLon) {
+    return 'https://www.google.com/maps?q=' + _wsLat + ',' + _wsLon;
+  }
+  return 'https://www.google.com/maps';
+}
+
+// ── CONTACTS ──
+function wsAddContact() {
+  var nameEl  = document.getElementById('ws-new-contact-name');
+  var phoneEl = document.getElementById('ws-new-contact-phone');
+  var name  = nameEl.value.trim();
+  var phone = phoneEl.value.trim();
+
+  if (!name || !phone) { wsToast('Enter both name and phone number', 'error'); return; }
+  var digits = phone.replace(/^\+?91/, '').replace(/\D/g, '');
+  if (digits.length !== 10) { wsToast('Enter a valid 10-digit Indian number', 'error'); return; }
+  if (_wsContacts.length >= 5) { wsToast('Maximum 5 guardians allowed', 'error'); return; }
+
+  // Check duplicate
+  var fullPhone = '+91' + digits;
+  for (var i = 0; i < _wsContacts.length; i++) {
+    if (_wsContacts[i].phone === fullPhone) { wsToast('This number is already added', 'error'); return; }
+  }
+
+  _wsContacts.push({ name: name, phone: fullPhone });
+  nameEl.value = ''; phoneEl.value = '';
+  wsRenderContacts();
+  wsSaveState();
+  wsUpdateCardCounts();
+  wsToast('✅ ' + name + ' added as guardian');
+}
+
+function wsRemoveContact(idx) {
+  _wsContacts.splice(idx, 1);
+  wsRenderContacts();
+  wsSaveState();
+  wsUpdateCardCounts();
+}
+
+function wsRenderContacts() {
+  var list = document.getElementById('ws-contacts-list');
+  list.innerHTML = '';
+
+  if (_wsContacts.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.78rem;padding:12px 0;">No guardians added yet. Add trusted contacts above.</div>';
+    return;
+  }
+
+  _wsContacts.forEach(function(c, i) {
+    var chip = document.createElement('div');
+    chip.className = 'ws-contact-chip';
+    chip.innerHTML =
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<span style="font-size:1.1rem;filter:drop-shadow(0 0 4px rgba(244,114,182,.5))">👤</span>' +
+        '<div>' +
+          '<div style="font-size:.85rem;font-weight:600;color:var(--text);">' + wsEsc(c.name) + '</div>' +
+          '<div style="font-size:.72rem;color:var(--muted);font-family:monospace;">' + c.phone + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<button onclick="wsRemoveContact(' + i + ')" ' +
+              'style="background:rgba(255,71,87,.12);border:1px solid rgba(255,71,87,.3);' +
+              'color:var(--red);border-radius:8px;padding:4px 10px;cursor:pointer;' +
+              'font-size:.72rem;font-weight:700;">Remove</button>';
+    list.appendChild(chip);
+  });
+
+  // Hide add row if at max
+  document.getElementById('ws-add-row').style.display = _wsContacts.length >= 5 ? 'none' : 'flex';
+}
+
+// ── SOS TRIGGER ──
+function wsTriggerSOS() {
+  var userName = document.getElementById('ws-user-name').value.trim() || _wsUserName || 'AlertIndia User';
+
+  if (_wsContacts.length === 0) {
+    wsToast('⚠️ Add at least one guardian contact first', 'error');
+    return;
+  }
+  if (!_wsLat || !_wsLon) {
+    wsToast('⚠️ Location not yet available — tap Refresh and wait', 'error');
+    return;
+  }
+
+  if (!confirm('🚨 SEND SOS ALERT?\n\nThis will send your live location to ' + _wsContacts.length + ' guardian(s) and the local police station.\n\nConfirm only if you genuinely need help.')) return;
+
+  _wsSOSActive = true;
+  _wsUserName  = userName;
+
+  var mapsLink = wsMapsLink();
+  var locStr   = _wsLat.toFixed(5) + ', ' + _wsLon.toFixed(5);
+
+  // Message to personal contacts
+  var personalMsg =
+    '🚨 EMERGENCY SOS from AlertIndia 🚨\n\n' +
+    '👤 *' + userName + '* may be in DANGER and needs immediate help!\n\n' +
+    '📍 *Live Location:* ' + mapsLink + '\n' +
+    '🗺️ Coordinates: ' + locStr + '\n\n' +
+    '⚡ Please call them or send help NOW.\n' +
+    'If unreachable — call police: 100\n\n' +
+    '— AlertIndia Guardian Shield';
+
+  // Message to police / cyber
+  var policeMsg =
+    '🚨 EMERGENCY ALERT — AlertIndia SOS System 🚨\n\n' +
+    'Person in distress: *' + userName + '*\n' +
+    '📍 Location: ' + mapsLink + '\n' +
+    'Coordinates: ' + locStr + '\n\n' +
+    'This person has activated an emergency SOS via AlertIndia.\n' +
+    'Please send police assistance immediately.\n\n' +
+    '— AlertIndia Earliest Warning System';
+
+  // Send to all guardian contacts via backend
+  var sendPromises = [];
+  _wsContacts.forEach(function(c) {
+    sendPromises.push(
+      fetch(GAS_URL, {
+        method: 'POST', mode: 'no-cors',
+        body: JSON.stringify({
+          action: 'ws_sos',
+          to_phone: c.phone,
+          to_name: c.name,
+          user_name: userName,
+          message: personalMsg,
+          lat: _wsLat,
+          lon: _wsLon,
+          maps_link: mapsLink
+        })
+      }).catch(function(e){ console.warn('SOS send error:', e); })
+    );
+  });
+
+  // Also notify police helpline (100 as placeholder — GAS routes this)
+  sendPromises.push(
+    fetch(GAS_URL, {
+      method: 'POST', mode: 'no-cors',
+      body: JSON.stringify({
+        action: 'ws_police_notify',
+        user_name: userName,
+        message: policeMsg,
+        lat: _wsLat,
+        lon: _wsLon,
+        maps_link: mapsLink
+      })
+    }).catch(function(e){ console.warn('Police notify error:', e); })
+  );
+
+  Promise.allSettled(sendPromises).then(function() {
+    console.log('SOS dispatched to ' + sendPromises.length + ' recipients');
+  });
+
+  // Update UI
+  var sosBtn = document.getElementById('ws-sos-btn');
+  sosBtn.style.background = 'linear-gradient(135deg,#7f1d1d,#dc2626)';
+  sosBtn.textContent = '🔴 SOS ACTIVE — Help is coming';
+  sosBtn.classList.add('ws-sos-armed');
+
+  // Show ring
+  var ring = document.getElementById('ws-sos-ring');
+  ring.style.display = 'block';
+  setTimeout(function(){ ring.style.display = 'none'; }, 1100);
+
+  var statusEl = document.getElementById('ws-sos-status');
+  statusEl.style.display = 'block';
+  statusEl.innerHTML =
+    '✅ SOS sent to <b>' + _wsContacts.length + ' guardian(s)</b> + local police station.<br>' +
+    '📍 Your location: <a href="' + mapsLink + '" target="_blank" style="color:#f472b6;">' + locStr + '</a>';
+
+  document.getElementById('ws-safe-section').style.display = 'block';
+
+  // Update card
+  document.getElementById('ws-status-card').textContent = '🔴 SOS ACTIVE';
+  document.getElementById('ws-status-card').style.color = '#f43f5e';
+  document.getElementById('ws-card-badge').textContent  = 'SOS ACTIVE';
+  document.getElementById('ws-card-badge').style.color  = '#f43f5e';
+  document.getElementById('ws-card-pulse').style.display = 'block';
+
+  wsToast('🚨 SOS sent to all guardians + police', 'error');
+  wsSaveState();
+}
+
+// ── SAFE / CANCEL ──
+function wsSendSafe() {
+  if (!confirm('✅ Confirm you are safe?\n\nThis will send a "all clear" message to all your guardian contacts.')) return;
+
+  var userName = _wsUserName || document.getElementById('ws-user-name').value.trim() || 'AlertIndia User';
+  var safeMsg  =
+    '✅ ALL CLEAR from AlertIndia\n\n' +
+    '👤 *' + userName + '* is SAFE and okay!\n\n' +
+    'The earlier SOS alert was either a false alarm or the situation has been resolved.\n' +
+    'No further action needed — thank you for your concern! 🙏\n\n' +
+    '— AlertIndia Guardian Shield';
+
+  _wsContacts.forEach(function(c) {
+    fetch(GAS_URL, {
+      method: 'POST', mode: 'no-cors',
+      body: JSON.stringify({
+        action: 'ws_safe',
+        to_phone: c.phone,
+        to_name: c.name,
+        user_name: userName,
+        message: safeMsg
+      })
+    }).catch(function(e){ console.warn('Safe send error:', e); });
+  });
+
+  _wsSOSActive = false;
+
+  // Reset UI
+  var sosBtn = document.getElementById('ws-sos-btn');
+  sosBtn.style.background = 'linear-gradient(135deg,#be185d,#f43f5e)';
+  sosBtn.textContent      = '🚨  I NEED HELP — Send SOS Now';
+  sosBtn.classList.remove('ws-sos-armed');
+
+  document.getElementById('ws-sos-status').style.display  = 'none';
+  document.getElementById('ws-safe-section').style.display = 'none';
+
+  document.getElementById('ws-status-card').textContent = 'Inactive';
+  document.getElementById('ws-status-card').style.color = 'var(--muted)';
+  document.getElementById('ws-card-badge').textContent  = 'STANDBY';
+  document.getElementById('ws-card-badge').style.color  = '#f472b6';
+  document.getElementById('ws-card-pulse').style.display = 'none';
+
+  wsToast('✅ Safe message sent to all guardians', 'success');
+  wsSaveState();
+}
+
+// ── PERSIST STATE (sessionStorage — clears on tab close) ──
+function wsSaveState() {
+  _wsUserName = document.getElementById('ws-user-name').value.trim();
+  try {
+    sessionStorage.setItem('ws_state', JSON.stringify({
+      contacts: _wsContacts,
+      userName: _wsUserName,
+      sosActive: _wsSOSActive
+    }));
+  } catch(e){}
+}
+function wsLoadState() {
+  try {
+    var raw = sessionStorage.getItem('ws_state');
+    if (!raw) return;
+    var s = JSON.parse(raw);
+    _wsContacts = s.contacts  || [];
+    _wsUserName  = s.userName || '';
+    _wsSOSActive = s.sosActive || false;
+    document.getElementById('ws-user-name').value = _wsUserName;
+    // Restore SOS UI if it was active
+    if (_wsSOSActive) {
+      var sosBtn = document.getElementById('ws-sos-btn');
+      sosBtn.style.background = 'linear-gradient(135deg,#7f1d1d,#dc2626)';
+      sosBtn.textContent = '🔴 SOS ACTIVE — Help is coming';
+      sosBtn.classList.add('ws-sos-armed');
+      document.getElementById('ws-sos-status').style.display = 'block';
+      document.getElementById('ws-sos-status').innerHTML = '⚡ SOS is still active. Send "I\'m Safe" when resolved.';
+      document.getElementById('ws-safe-section').style.display = 'block';
+    }
+    wsUpdateCardCounts();
+  } catch(e){}
+}
+
+function wsUpdateCardCounts() {
+  var el = document.getElementById('ws-contact-count-card');
+  if (el) el.textContent = _wsContacts.length + ' saved';
+}
+
+// ── HELPERS ──
+function wsEsc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function wsToast(msg, type) {
+  if (typeof toast === 'function') { toast(msg, type || 'success'); return; }
+  var t = document.getElementById('toast');
+  if (t) { t.textContent = msg; t.className = 'toast ' + (type||'success') + ' show'; setTimeout(function(){ t.className='toast'; }, 3200); }
+}
+
+// Init card counts on page load
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    try {
+      var raw = sessionStorage.getItem('ws_state');
+      if (raw) { var s = JSON.parse(raw); _wsContacts = s.contacts||[]; wsUpdateCardCounts(); }
+    } catch(e){}
+  }, 500);
+});
+</script>
+</body>
+</html>

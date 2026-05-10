@@ -1,0 +1,365 @@
+const SHEET_ID = "1Ha-Vyalryh63MHSlGRiBcME2iqUsbFrs-BLGqh_CVKg";
+
+function getSheet(name) {
+  return SpreadsheetApp.openById(SHEET_ID).getSheetByName(name);
+}
+
+function getSecrets() {
+  const p = PropertiesService.getScriptProperties();
+  return {
+    sid:     p.getProperty("TWILIO_SID"),
+    token:   p.getProperty("TWILIO_TOKEN"),
+    sandbox: p.getProperty("TWILIO_SANDBOX") || "whatsapp:+14155238886"
+  };
+}
+
+// ──────────────────────────────────────────────────────────
+// doGet — serves HTML (default) OR returns JSON (for ?action=)
+// ──────────────────────────────────────────────────────────
+function doGet(e) {
+  const action = e && e.parameter ? e.parameter.action : null;
+
+  if (action === "weather")        return json(fetchWeather());
+  if (action === "reverse_geo")    return json(reverseGeocode(e.parameter.lat, e.parameter.lon));
+  if (action === "visitor_count")  return json({ total: countRows("Visitors") });
+  if (action === "rating_count")   return json({ rating_count: countRows("Ratings") });
+  if (action === "get_ratings")    return json({ ratings: getRatings() });
+  if (action === "get_status")     return json(getLatestStatus());
+
+  // default → serve the web app
+  return HtmlService.createHtmlOutputFromFile("index")
+    .setTitle("AlertIndia — Earliest Warning System")
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+// ──────────────────────────────────────────────────────────
+// doPost — every write action flows through here
+// ──────────────────────────────────────────────────────────
+function doPost(e) {
+  try {
+    // Apps Script receives body as e.postData.contents regardless of Content-Type
+    const data = JSON.parse(e.postData.contents);
+    switch (data.action) {
+      case "visitor_ping": return json(logVisitor(data));
+      case "rating":       return json(handleRating(data));
+      case "comment":      return json(handleComment(data));
+      case "register":     return json(handleRegistration(data));
+      case "alert":        return json(handleWhatsAppAlert(data));
+      case "bw_notify":    return json(handleBWNotify());
+      case "drone":        return json(handleDroneAlert(data));
+      case "ws_sos":       return json(handleWomenSafetySOS(data));
+      case "ws_safe":      return json(handleWomenSafetySafe(data));
+      case "ws_police_notify": return json(handlePoliceNotify(data));
+      default:             return json({ result: "error", error: "Unknown action: " + data.action });
+    }
+  } catch (err) {
+    return json({ result: "error", error: err.toString() });
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// Actions
+// ──────────────────────────────────────────────────────────
+function fetchWeather() {
+  const w = JSON.parse(UrlFetchApp.fetch(
+    "https://api.open-meteo.com/v1/forecast?latitude=22.5726&longitude=88.3639" +
+    "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code"
+  ).getContentText()).current;
+  const q = JSON.parse(UrlFetchApp.fetch(
+    "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=22.5726&longitude=88.3639" +
+    "&current=pm10,pm2_5,us_aqi"
+  ).getContentText()).current;
+  return {
+    temperature:   w.temperature_2m,
+    feels_like:    w.apparent_temperature,
+    humidity:      w.relative_humidity_2m,
+    wind_speed:    w.wind_speed_10m,
+    aqi:           q.us_aqi,
+    pm2_5:         q.pm2_5,
+    pm10:          q.pm10,
+    timestamp:     new Date().toISOString(),
+    visitor_count: countRows("Visitors"),
+    rating_count:  countRows("Ratings")
+  };
+}
+
+function logVisitor(data) {
+  const s = getSheet("Visitors");
+  if (!s) return { result: "error", error: "Visitors sheet missing" };
+  s.appendRow([new Date(), data.ip || "N/A", data.location || "India", data.page || "home", data.session_id || "N/A"]);
+  return { result: "success", total: countRows("Visitors") };
+}
+
+function handleRating(data) {
+  const r = Number(data.rating);
+  if (!r || r < 1 || r > 5) return { result: "error", error: "Invalid rating (1-5)" };
+  const s = getSheet("Ratings");
+  if (!s) return { result: "error", error: "Ratings sheet missing" };
+  s.appendRow([new Date(), data.district || data.category || "General", r, data.comment || ""]);
+  return { result: "success", new_count: countRows("Ratings") };
+}
+
+function handleComment(data) {
+  if (!data.comment || !data.comment.trim()) return { result: "error", error: "Empty comment" };
+  const s = getSheet("Comments");
+  if (!s) return { result: "error", error: "Comments sheet missing" };
+  s.appendRow([new Date(), data.phone || "Anonymous", data.alert_id || "GENERAL", data.comment.trim(), "New"]);
+  return { result: "success" };
+}
+
+function handleRegistration(data) {
+  if (!data.phone) return { result: "error", error: "Phone number required" };
+  if (!data.name)  return { result: "error", error: "Name required" };
+
+  const s = getSheet("Users");
+  if (!s) return { result: "error", error: "Users sheet missing — contact admin" };
+
+  // Check if user already exists
+  const existing = s.getDataRange().getValues();
+  for (let i = 1; i < existing.length; i++) {
+    if (existing[i][1] === data.phone) {
+      return { result: "already_registered", message: "Already registered with this number!" };
+    }
+  }
+
+  // Register new user
+  s.appendRow([data.name || "User", data.phone, data.location || "Unknown", "User", new Date()]);
+
+  // Send welcome WhatsApp — capture Twilio status to surface errors
+  const twilioStatus = sendWhatsApp(data.phone,
+    "🚨 Welcome to AlertIndia, " + (data.name || "friend") + "!\n\n" +
+    "You are now registered for earliest-warning alerts.\n" +
+    "📍 Location: " + (data.location || "India") + "\n\n" +
+    "Stay safe! 🙏"
+  );
+
+  // Twilio sandbox error: if sandbox not joined, status will contain "failed" or error text
+  if (twilioStatus && (twilioStatus.includes("failed") || twilioStatus.includes("undelivered") || twilioStatus === "Twilio secrets missing")) {
+    // Still registered in sheet, but warn about WhatsApp delivery
+    return {
+      result: "success",
+      message: "Registered! ⚠️ WhatsApp message pending — make sure you sent 'join <sandbox-word>' to +1 415 523 8886 first.",
+      twilio: twilioStatus
+    };
+  }
+
+  return { result: "success", message: "Registered successfully! Welcome message sent.", twilio: twilioStatus };
+}
+
+function handleWhatsAppAlert(data) {
+  if (!data.phone)   return { result: "error", error: "Phone required" };
+  if (!data.message) return { result: "error", error: "Message required" };
+  return { result: "success", twilio: sendWhatsApp(data.phone, data.message) };
+}
+
+function handleBWNotify() {
+  let s = getSheet("BWNotify");
+  if (!s) s = SpreadsheetApp.openById(SHEET_ID).insertSheet("BWNotify");
+  s.appendRow([new Date()]);
+  return { result: "success" };
+}
+
+function handleDroneAlert(data) {
+  const s = getSheet("Drone_Alerts");
+  if (!s) return { result: "error", error: "Drone_Alerts sheet missing" };
+  s.appendRow([new Date(), data.drone_id || "UNKNOWN", data.alert_type || "Sighting",
+               data.latitude || "", data.longitude || "", data.severity || "Low", "Pending"]);
+  return { result: "success" };
+}
+
+// ──────────────────────────────────────────────────────────
+// Latest Status
+// ──────────────────────────────────────────────────────────
+function getLatestStatus() {
+  try {
+    const sheet = getSheet("Alerts");
+    if (!sheet || sheet.getLastRow() <= 1) {
+      return {
+        status:    "All Clear",
+        message:   "No active alerts at this time.",
+        severity:  "Low",
+        timestamp: new Date().toISOString()
+      };
+    }
+    const lastRow = sheet.getLastRow();
+    const data = sheet.getRange(lastRow, 1, 1, 5).getValues()[0];
+    return {
+      status:    data[1] || "Unknown",
+      message:   data[2] || "No details available",
+      severity:  data[3] || "Low",
+      timestamp: new Date(data[0]).toISOString()
+    };
+  } catch(e) {
+    return { error: e.toString() };
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────────────────
+function countRows(name) {
+  const s = getSheet(name);
+  return s ? Math.max(0, s.getLastRow() - 1) : 0;
+}
+
+function getRatings() {
+  const s = getSheet("Ratings");
+  if (!s || s.getLastRow() <= 1) return [];
+  return s.getRange(2, 1, s.getLastRow()-1, 4).getValues()
+    .filter(r => r[2] > 0).reverse().slice(0, 10)
+    .map(r => ({
+      time:     timeAgo(new Date(r[0])),
+      district: r[1] || "India",
+      rating:   Number(r[2]),
+      comment:  r[3] || ""
+    }));
+}
+
+function sendWhatsApp(phone, msg) {
+  const s = getSecrets();
+  if (!s.sid || !s.token) return "Twilio secrets missing";
+  const url = "https://api.twilio.com/2010-04-01/Accounts/" + s.sid + "/Messages.json";
+  const res = UrlFetchApp.fetch(url, {
+    method: "post",
+    contentType: "application/x-www-form-urlencoded",
+    payload: "To=whatsapp:" + encodeURIComponent(phone) +
+             "&From=" + encodeURIComponent(s.sandbox) +
+             "&Body=" + encodeURIComponent(msg),
+    headers: { Authorization: "Basic " + Utilities.base64Encode(s.sid + ":" + s.token) },
+    muteHttpExceptions: true
+  });
+  const j = JSON.parse(res.getContentText());
+  return j.status || j.message || "unknown";
+}
+
+function timeAgo(d) {
+  const s = Math.floor((new Date() - d)/1000);
+  if (s < 60)    return "Just now";
+  if (s < 3600)  return Math.floor(s/60) + "m ago";
+  if (s < 86400) return Math.floor(s/3600) + "h ago";
+  return Math.floor(s/86400) + "d ago";
+}
+
+function json(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ──────────────────────────────────────────────────────────
+// Reverse Geocoding
+// ──────────────────────────────────────────────────────────
+function reverseGeocode(lat, lon) {
+  try {
+    if (!lat || !lon) return "India";
+    lat = parseFloat(lat);
+    lon = parseFloat(lon);
+    const url = "https://geocode.maps.co/reverse?lat=" + lat + "&lon=" + lon + "&api_key=6823b5a03eed1704906898fce6decf04";
+    const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    const data = JSON.parse(res.getContentText());
+    const a = data.address;
+    if (!a) return lat.toFixed(4) + ", " + lon.toFixed(4);
+    const city = a.city || a.town || a.village || a.suburb || a.county || "";
+    const state = a.state || "";
+    return city + (state && state !== city ? ", " + state : "") || lat.toFixed(4) + ", " + lon.toFixed(4);
+  } catch(e) {
+    return "India";
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// Weather + AQI + Flood Risk (location-based)
+// ──────────────────────────────────────────────────────────
+function getWeatherAndAQI(lat, lon) {
+  try {
+    const weather = JSON.parse(UrlFetchApp.fetch(
+      "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
+      "&current=temperature_2m,apparent_temperature,relative_humidity_2m," +
+      "wind_speed_10m,weather_code,precipitation"
+    ).getContentText()).current;
+
+    const air = JSON.parse(UrlFetchApp.fetch(
+      "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=" + lat +
+      "&longitude=" + lon + "&current=pm10,pm2_5,us_aqi"
+    ).getContentText()).current;
+
+    const cityName = reverseGeocode(lat, lon);
+
+    return {
+      city:         cityName,
+      temperature:  weather.temperature_2m,
+      feels_like:   weather.apparent_temperature,
+      humidity:     weather.relative_humidity_2m,
+      wind_speed:   weather.wind_speed_10m,
+      precipitation: weather.precipitation,
+      weather_code: weather.weather_code,
+      aqi:          air.us_aqi,
+      pm2_5:        air.pm2_5,
+      pm10:         air.pm10,
+      flood_risk:   weather.precipitation > 10 ? "High" : weather.precipitation > 5 ? "Medium" : "Low",
+      timestamp:    new Date().toISOString()
+    };
+  } catch(e) {
+    return { error: e.toString() };
+  }
+}
+// ──────────────────────────────────────────────────────────
+// Women Safety — Guardian Shield
+// ──────────────────────────────────────────────────────────
+function handleWomenSafetySOS(data) {
+  let s = getSheet("WomenSafety");
+  if (!s) s = SpreadsheetApp.openById(SHEET_ID).insertSheet("WomenSafety");
+  if (s.getLastRow() === 0) {
+    s.appendRow(["Timestamp","User Name","Contact Name","Contact Phone","Latitude","Longitude","Type","Maps Link"]);
+  }
+  s.appendRow([
+    new Date(),
+    data.user_name  || "Unknown",
+    data.to_name    || "—",
+    data.to_phone   || "—",
+    data.lat        || "",
+    data.lon        || "",
+    "SOS",
+    data.maps_link  || ""
+  ]);
+  const status = sendWhatsApp(data.to_phone, data.message);
+  return { result: "success", twilio: status };
+}
+
+function handleWomenSafetySafe(data) {
+  let s = getSheet("WomenSafety");
+  if (!s) s = SpreadsheetApp.openById(SHEET_ID).insertSheet("WomenSafety");
+  if (s.getLastRow() === 0) {
+    s.appendRow(["Timestamp","User Name","Contact Name","Contact Phone","Latitude","Longitude","Type","Maps Link"]);
+  }
+  s.appendRow([
+    new Date(),
+    data.user_name || "Unknown",
+    data.to_name   || "—",
+    data.to_phone  || "—",
+    "", "", "SAFE", ""
+  ]);
+  const status = sendWhatsApp(data.to_phone, data.message);
+  return { result: "success", twilio: status };
+}
+
+function handlePoliceNotify(data) {
+  // Replace with your own WhatsApp-registered admin number
+  const ADMIN_NOTIFY_NUMBER = "+91XXXXXXXXXX"; // ← CHANGE THIS
+
+  let s = getSheet("WomenSafety");
+  if (!s) s = SpreadsheetApp.openById(SHEET_ID).insertSheet("WomenSafety");
+  if (s.getLastRow() === 0) {
+    s.appendRow(["Timestamp","User Name","Contact Name","Contact Phone","Latitude","Longitude","Type","Maps Link"]);
+  }
+  s.appendRow([
+    new Date(),
+    data.user_name || "Unknown",
+    "POLICE/ADMIN",
+    ADMIN_NOTIFY_NUMBER,
+    data.lat || "", data.lon || "",
+    "POLICE_NOTIFY",
+    data.maps_link || ""
+  ]);
+  const status = sendWhatsApp(ADMIN_NOTIFY_NUMBER, data.message);
+  return { result: "success", twilio: status };
+}

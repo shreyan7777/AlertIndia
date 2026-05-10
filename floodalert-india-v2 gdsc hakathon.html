@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlertIndia — Earliest Warning System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --red: #ff3b3b;
+    --red-glow: rgba(255,59,59,0.15);
+    --yellow: #f5a623;
+    --yellow-glow: rgba(245,166,35,0.15);
+    --green: #00d68f;
+    --green-glow: rgba(0,214,143,0.15);
+    --blue: #3b82f6;
+    --blue-glow: rgba(59,130,246,0.12);
+    --orange: #ff6b35;
+    --orange-glow: rgba(255,107,53,0.15);
+    --purple: #a855f7;
+    --purple-glow: rgba(168,85,247,0.15);
+    --text: #e8edf5;
+    --muted: #6b7a99;
+    --accent: #00b4d8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,180,216,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,180,216,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* HEADER */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,14,26,0.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+    animation: pulse-dot 2s infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.7; }
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(0,214,143,0.1);
+    border: 1px solid rgba(0,214,143,0.3);
+    color: var(--green);
+    padding: 0.3rem 0.75rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-dot 1.5s infinite;
+  }
+
+  /* MAIN */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* HERO */
+  .hero {
+    margin-bottom: 2rem;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .fastest-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, rgba(0,180,216,0.1), rgba(59,130,246,0.1));
+    border: 1px solid rgba(0,180,216,0.25);
+    color: var(--accent);
+    padding: 0.4rem 1rem;
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    margin-bottom: 1.25rem;
+  }
+
+  .fastest-badge strong { font-weight: 700; }
+
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-title span { color: var(--accent); }
+
+  .hero-sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+  }
+
+  /* STATS */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .stat-card:nth-child(2) { animation-delay: 0.1s; }
+  .stat-card:nth-child(3) { animation-delay: 0.2s; }
+  .stat-card:nth-child(4) { animation-delay: 0.3s; }
+  .stat-card:nth-child(5) { animation-delay: 0.4s; }
+
+  .stat-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .stat-value.red { color: var(--red); }
+  .stat-value.yellow { color: var(--yellow); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.blue { color: var(--accent); }
+  .stat-value.orange { color: var(--orange); }
+
+  /* SEARCH BAR */
+  .search-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    animation: fadeUp 0.5s ease both;
+    animation-delay: 0.2s;
+  }
+
+  .search-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.75rem;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .search-input-wrap {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 1rem;
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+
+  .btn-location {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.75rem 1.1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-location:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-search {
+    background: var(--accent);
+    border: none;
+    color: white;
+    padding: 0.75rem 1.25rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-search:hover { background: #0097b8; transform: translateY(-1px); }
+
+  /* LOCATION RESULT */
+  .location-result {
+    display: none;
+    margin-top: 1rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+  }
+
+  .location-result.active { display: block; animation: fadeUp 0.3s ease; }
+
+  .location-result-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .location-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .location-coords {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  .location-hazards {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+
+  .hazard-pill {
+    font-size: 0.72rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 100px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .hazard-pill.red { background: var(--red-glow); color: var(--red); border: 1px solid rgba(255,59,59,0.3); }
+  .hazard-pill.yellow { background: var(--yellow-glow); color: var(--yellow); border: 1px solid rgba(245,166,35,0.3); }
+  .hazard-pill.green { background: var(--green-glow); color: var(--green); border: 1px solid rgba(0,214,143,0.3); }
+  .hazard-pill.orange { background: var(--orange-glow); color: var(--orange); border: 1px solid rgba(255,107,53,0.3); }
+
+  /* HAZARD TABS */
+  .tabs-section { margin-bottom: 2rem; animation: fadeUp 0.5s ease both; }
+
+  .tabs-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: none;
+  }
+
+  .tabs-row::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.6rem 1.1rem;
+    border-radius: 100px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .tab-btn:hover { border-color: #2a3a55; color: var(--text); }
+
+  .tab-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    font-weight: 600;
+  }
+
+  .tab-btn.active.flood { background: var(--blue); border-color: var(--blue); }
+  .tab-btn.active.heat { background: var(--orange); border-color: var(--orange); }
+  .tab-btn.active.aqi { background: var(--purple); border-color: var(--purple); }
+  .tab-btn.active.rain { background: var(--accent); border-color: var(--accent); }
+  .tab-btn.active.all { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+
+  /* TAB PANELS */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ALERT BANNER */
+  .alert-banner {
+    background: linear-gradient(135deg, rgba(255,59,59,0.1), rgba(255,59,59,0.05));
+    border: 1px solid rgba(255,59,59,0.3);
+    border-left: 3px solid var(--red);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .alert-banner.orange {
+    background: linear-gradient(135deg, rgba(255,107,53,0.1), rgba(255,107,53,0.05));
+    border-color: rgba(255,107,53,0.3);
+    border-left-color: var(--orange);
+  }
+
+  .alert-banner.purple {
+    background: linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.05));
+    border-color: rgba(168,85,247,0.3);
+    border-left-color: var(--purple);
+  }
+
+  .alert-icon { font-size: 1.5rem; flex-shrink: 0; }
+
+  .alert-text strong {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+  }
+
+  .alert-banner .alert-text strong { color: var(--red); }
+  .alert-banner.orange .alert-text strong { color: var(--orange); }
+  .alert-banner.purple .alert-text strong { color: var(--purple); }
+
+  .alert-text span { font-size: 0.8rem; color: var(--muted); }
+
+  .alert-time {
+    margin-left: auto;
+    font-size: 0.72rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 100px;
+    flex-shrink: 0;
+    background: rgba(0,180,216,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0,180,216,0.2);
+  }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* CARDS GRID */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .hazard-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    animation: fadeUp 0.5s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hazard-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .hazard-card.red::before { background: var(--red); }
+  .hazard-card.yellow::before { background: var(--yellow); }
+  .hazard-card.green::before { background: var(--green); }
+  .hazard-card.orange::before { background: var(--orange); }
+  .hazard-card.purple::before { background: var(--purple); }
+
+  .hazard-card:hover { transform: translateY(-3px); background: var(--surface2); border-color: #2a3a55; }
+  .hazard-card.red:hover { box-shadow: 0 8px 30px var(--red-glow); }
+  .hazard-card.yellow:hover { box-shadow: 0 8px 30px var(--yellow-glow); }
+  .hazard-card.green:hover { box-shadow: 0 8px 30px var(--green-glow); }
+  .hazard-card.orange:hover { box-shadow: 0 8px 30px var(--orange-glow); }
+  .hazard-card.purple:hover { box-shadow: 0 8px 30px var(--purple-glow); }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+
+  .card-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .card-sub { font-size: 0.72rem; color: var(--muted); margin-top: 0.15rem; }
+
+  .risk-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.3rem 0.65rem;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .risk-badge.red { background: var(--red-glow); color: var(--red); border: 1px solid rgba(255,59,59,0.3); }
+  .risk-badge.yellow { background: var(--yellow-glow); color: var(--yellow); border: 1px solid rgba(245,166,35,0.3); }
+  .risk-badge.green { background: var(--green-glow); color: var(--green); border: 1px solid rgba(0,214,143,0.3); }
+  .risk-badge.orange { background: var(--orange-glow); color: var(--orange); border: 1px solid rgba(255,107,53,0.3); }
+  .risk-badge.purple { background: var(--purple-glow); color: var(--purple); border: 1px solid rgba(168,85,247,0.3); }
+
+  .level-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .level-bar-bg {
+    height: 6px;
+    background: var(--border);
+    border-radius: 100px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+  }
+
+  .level-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 1.2s ease;
+  }
+
+  .level-bar-fill.red { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  .level-bar-fill.yellow { background: var(--yellow); }
+  .level-bar-fill.green { background: var(--green); }
+  .level-bar-fill.orange { background: var(--orange); }
+  .level-bar-fill.purple { background: var(--purple); }
+
+  .card-meta {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.72rem;
+    color: var(--muted);
+    flex-wrap: wrap;
+  }
+
+  /* HOW IT WORKS */
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .how-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .how-step {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+  }
+
+  .how-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+
+  .how-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+  }
+
+  .how-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .modal-overlay.active { display: flex; animation: fadeIn 0.2s ease; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 480px;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 1;
+  }
+
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 800;
+  }
+
+  .modal-close {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .modal-close:hover { color: var(--text); }
+
+  .modal-body { padding: 1.5rem; }
+
+  .modal-stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .modal-stat {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  .modal-stat-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.3rem;
+  }
+
+  .modal-stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+
+  .modal-vs { font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem; }
+
+  .alert-form-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  .form-input:focus { border-color: var(--accent); }
+  .form-input::placeholder { color: var(--muted); }
+
+  .btn-whatsapp {
+    width: 100%;
+    background: #25d366;
+    color: white;
+    border: none;
+    padding: 0.85rem;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+  }
+
+  .btn-whatsapp:hover { background: #20bc5a; transform: translateY(-1px); }
+  .form-note { text-align: center; font-size: 0.72rem; color: var(--muted); margin-top: 0.75rem; }
+
+  .success-msg { display: none; text-align: center; padding: 1rem 0; }
+  .success-msg.active { display: block; animation: fadeUp 0.3s ease; }
+  .success-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .success-msg h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .success-msg p { font-size: 0.85rem; color: var(--muted); }
+
+  /* FOOTER */
+  footer {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 0 1rem; }
+    main { padding: 1.5rem 1rem 3rem; }
+    footer { flex-direction: column; gap: 0.5rem; text-align: center; }
+    .search-row { flex-direction: column; }
+    .btn-location, .btn-search { width: 100%; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    AlertIndia
+  </div>
+  <div class="live-badge">
+    <div class="live-dot"></div>
+    Live Monitoring
+  </div>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="fastest-badge">
+      ⚡ <strong>First to alert.</strong> Before it reaches you.
+    </div>
+    <h1 class="hero-title">Know the danger<br><span>before it arrives.</span></h1>
+    <p class="hero-sub">Floods · Heatwaves · Air Quality · Rainfall — earliest warnings for any location in India</p>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Flood Alerts</div>
+        <div class="stat-value red">3</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Heat Alerts</div>
+        <div class="stat-value orange">5</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">AQI Alerts</div>
+        <div class="stat-value purple">4</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Areas Safe</div>
+        <div class="stat-value green">12</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Alerts Sent</div>
+        <div class="stat-value blue">3,841</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="search-section">
+    <div class="search-label">🔍 Check any location in India</div>
+    <div class="search-row">
+      <div class="search-input-wrap">
+        <span class="search-icon">📍</span>
+        <input class="search-input" type="text" id="search-input" placeholder="Search village, town, city, district..." />
+      </div>
+      <button class="btn-location" onclick="useMyLocation()">
+        🎯 Use My Location
+      </button>
+      <button class="btn-search" onclick="doSearch()">Search</button>
+    </div>
+    <div class="location-result" id="location-result">
+      <div class="location-result-top">
+        <div>
+          <div class="location-name" id="loc-name">—</div>
+          <div class="location-coords" id="loc-coords">—</div>
+        </div>
+        <div id="loc-overall-badge"></div>
+      </div>
+      <div class="location-hazards" id="loc-hazards"></div>
+    </div>
+  </div>
+
+  <!-- HAZARD TABS -->
+  <div class="tabs-section">
+    <div class="tabs-row">
+      <button class="tab-btn active all" onclick="switchTab('all', this)">🌐 All Hazards</button>
+      <button class="tab-btn flood" onclick="switchTab('flood', this)">🌊 Floods</button>
+      <button class="tab-btn heat" onclick="switchTab('heat', this)">🌡️ Heatwaves</button>
+      <button class="tab-btn aqi" onclick="switchTab('aqi', this)">💨 Air Quality</button>
+      <button class="tab-btn rain" onclick="switchTab('rain', this)">🌧️ Rainfall</button>
+    </div>
+
+    <!-- ALL TAB -->
+    <div class="tab-panel active" id="tab-all">
+      <div class="alert-banner">
+        <div class="alert-icon">🚨</div>
+        <div class="alert-text">
+          <strong>FLOOD — Kosi River, Supaul Bihar</strong>
+          <span>Water at 94% of danger mark. Expected breach in 4–6 hrs.</span>
+        </div>
+        <div class="alert-time">First to alert</div>
+      </div>
+      <div class="alert-banner orange">
+        <div class="alert-icon">🌡️</div>
+        <div class="alert-text">
+          <strong>HEATWAVE — Nagpur, Maharashtra</strong>
+          <span>47°C recorded. Dangerous heat index for next 48 hrs.</span>
+        </div>
+        <div class="alert-time">First to alert</div>
+      </div>
+      <div class="alert-banner purple">
+        <div class="alert-icon">😷</div>
+        <div class="alert-text">
+          <strong>SEVERE AQI — Anand Vihar, Delhi</strong>
+          <span>AQI 389 — Very Unhealthy. Avoid outdoor activity.</span>
+        </div>
+        <div class="alert-time">First to alert</div>
+      </div>
+      <div class="section-title">All Active Alerts</div>
+      <div class="cards-grid" id="all-grid"></div>
+    </div>
+
+    <!-- FLOOD TAB -->
+    <div class="tab-panel" id="tab-flood">
+      <div class="alert-banner">
+        <div class="alert-icon">🚨</div>
+        <div class="alert-text">
+          <strong>ACTIVE — Kosi River rising fast</strong>
+          <span>3 districts at high risk. IMD has not yet issued alert.</span>
+        </div>
+        <div class="alert-time">First to alert</div>
+      </div>
+      <div class="section-title">Flood Risk — Districts</div>
+      <div class="cards-grid" id="flood-grid"></div>
+    </div>
+
+    <!-- HEAT TAB -->
+    <div class="tab-panel" id="tab-heat">
+      <div class="alert-banner orange">
+        <div class="alert-icon">🔥</div>
+        <div class="alert-text">
+          <strong>HEATWAVE WARNING — Central & West India</strong>
+          <span>5 cities recording dangerous temperatures above 44°C today.</span>
+        </div>
+        <div class="alert-time">First to alert</div>
+      </div>
+      <div class="section-title">Heatwave Risk</div>
+      <div class="cards-grid" id="heat-grid"></div>
+    </div>
+
+    <!-- AQI TAB -->
+    <div class="tab-panel" id="tab-aqi">
+      <div class="alert-banner purple">
+        <div class="alert-icon">😷</div>
+        <div class="alert-text">
+          <strong>HAZARDOUS AIR — North India</strong>
+          <span>4 zones with AQI above 300. Schools should consider closure.</span>
+        </div>
+        <div class="alert-time">First to alert</div>
+      </div>
+      <div class="section-title">Air Quality Index</div>
+      <div class="cards-grid" id="aqi-grid"></div>
+    </div>
+
+    <!-- RAIN TAB -->
+    <div class="tab-panel" id="tab-rain">
+      <div class="alert-banner">
+        <div class="alert-icon">🌧️</div>
+        <div class="alert-text">
+          <strong>HEAVY RAINFALL — Northeast India</strong>
+          <span>200mm+ expected in 24 hrs. Landslide risk in hilly areas.</span>
+        </div>
+        <div class="alert-time">First to alert</div>
+      </div>
+      <div class="section-title">Rainfall Monitoring</div>
+      <div class="cards-grid" id="rain-grid"></div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="section-title">How AlertIndia Works</div>
+  <div class="how-grid">
+    <div class="how-card">
+      <div class="how-step">Step 01</div>
+      <div class="how-icon">🛰️</div>
+      <div class="how-title">Satellite + Sensor Data</div>
+      <div class="how-desc">We pull river levels, temperature, rainfall and air quality data from ISRO, ESA, and CPCB every 30 minutes.</div>
+    </div>
+    <div class="how-card">
+      <div class="how-step">Step 02</div>
+      <div class="how-icon">🤖</div>
+      <div class="how-title">AI Risk Detection</div>
+      <div class="how-desc">Our model detects dangerous patterns hours before they reach critical levels — across 4 hazard types simultaneously.</div>
+    </div>
+    <div class="how-card">
+      <div class="how-step">Step 03</div>
+      <div class="how-icon">📲</div>
+      <div class="how-title">First to Alert</div>
+      <div class="how-desc">WhatsApp & SMS alerts go directly to panchayat heads, ASHA workers and community leaders — skipping slow government chains.</div>
+    </div>
+    <div class="how-card">
+      <div class="how-step">Step 04</div>
+      <div class="how-icon">🏘️</div>
+      <div class="how-title">Any Location</div>
+      <div class="how-desc">Search any village, town or city in India. Or use your current location. Coverage down to local neighbourhood level.</div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <span>© 2025 AlertIndia — Built for GDC Hackathon</span>
+  <span>Data: ISRO Bhuvan · CWC · CPCB · ESA Sentinel · IMD</span>
+</footer>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title">—</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:0.2rem" id="modal-sub">—</div>
+      </div>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-stat-row" id="modal-stats"></div>
+      <div id="form-section">
+        <div class="alert-form-title">📲 Get WhatsApp Alerts for this area</div>
+        <div class="form-row">
+          <input class="form-input" type="text" placeholder="Your name" id="inp-name">
+          <input class="form-input" type="tel" placeholder="Phone number (WhatsApp)" id="inp-phone">
+        </div>
+        <button class="btn-whatsapp" onclick="handleSignup()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.855L0 24l6.335-1.508A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.796 9.796 0 01-5.015-1.378l-.36-.214-3.732.888.936-3.617-.235-.372A9.794 9.794 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
+          Get Alerts on WhatsApp
+        </button>
+        <p class="form-note">Free. Works on any phone. Hindi, Bengali & more.</p>
+      </div>
+      <div class="success-msg" id="success-msg">
+        <div class="success-icon">✅</div>
+        <h3>You're registered!</h3>
+        <p>You'll receive WhatsApp alerts for this area — hours before official warnings reach you.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────
+const floodData = [
+  { name:"Supaul", sub:"Bihar · Kosi River", risk:"red", riskLabel:"High Risk", level:94, levelText:"9.4m", danger:"10m", meta:["🌧️ 187mm","👥 2.3L at risk","⚡ First to alert"], stats:[{l:"River Level",v:"9.4m",c:"var(--red)",s:"Danger: 10m"},{l:"Rainfall",v:"187mm",c:"var(--accent)",s:"24hr total"},{l:"Risk",v:"High",c:"var(--red)",s:"2.3L people"},{l:"Status",v:"First Alert",c:"var(--accent)",s:"Ahead of IMD"}] },
+  { name:"Dhubri", sub:"Assam · Brahmaputra", risk:"red", riskLabel:"High Risk", level:88, levelText:"8.8m", danger:"10m", meta:["🌧️ 210mm","👥 1.9L at risk","⚡ First to alert"], stats:[{l:"River Level",v:"8.8m",c:"var(--red)",s:"Danger: 10m"},{l:"Rainfall",v:"210mm",c:"var(--accent)",s:"24hr total"},{l:"Risk",v:"High",c:"var(--red)",s:"1.9L people"},{l:"Status",v:"First Alert",c:"var(--accent)",s:"Ahead of IMD"}] },
+  { name:"Murshidabad", sub:"West Bengal · Bhagirathi", risk:"red", riskLabel:"High Risk", level:82, levelText:"6.2m", danger:"7.5m", meta:["🌧️ 145mm","👥 3.1L at risk","⚡ First to alert"], stats:[{l:"River Level",v:"6.2m",c:"var(--red)",s:"Danger: 7.5m"},{l:"Rainfall",v:"145mm",c:"var(--accent)",s:"24hr total"},{l:"Risk",v:"High",c:"var(--red)",s:"3.1L people"},{l:"Status",v:"First Alert",c:"var(--accent)",s:"Ahead of IMD"}] },
+  { name:"Gopalganj", sub:"Bihar · Gandak River", risk:"yellow", riskLabel:"Watch", level:64, levelText:"6.4m", danger:"10m", meta:["🌧️ 98mm","👥 1.4L at risk","👁️ Monitoring"], stats:[{l:"River Level",v:"6.4m",c:"var(--yellow)",s:"Danger: 10m"},{l:"Rainfall",v:"98mm",c:"var(--accent)",s:"24hr total"},{l:"Risk",v:"Medium",c:"var(--yellow)",s:"1.4L people"},{l:"Status",v:"Watching",c:"var(--yellow)",s:"Monitoring"}] },
+  { name:"Barpeta", sub:"Assam · Manas River", risk:"yellow", riskLabel:"Watch", level:58, levelText:"4.1m", danger:"7m", meta:["🌧️ 112mm","👥 1.1L at risk","👁️ Monitoring"], stats:[{l:"River Level",v:"4.1m",c:"var(--yellow)",s:"Danger: 7m"},{l:"Rainfall",v:"112mm",c:"var(--accent)",s:"24hr total"},{l:"Risk",v:"Medium",c:"var(--yellow)",s:"1.1L people"},{l:"Status",v:"Watching",c:"var(--yellow)",s:"Monitoring"}] },
+  { name:"Sitamarhi", sub:"Bihar · Bagmati", risk:"green", riskLabel:"Safe", level:32, levelText:"3.2m", danger:"10m", meta:["🌧️ 42mm","👥 1.6L","✅ Safe"], stats:[{l:"River Level",v:"3.2m",c:"var(--green)",s:"Danger: 10m"},{l:"Rainfall",v:"42mm",c:"var(--accent)",s:"24hr total"},{l:"Risk",v:"Low",c:"var(--green)",s:"1.6L people"},{l:"Status",v:"Safe",c:"var(--green)",s:"No alert"}] },
+];
+
+const heatData = [
+  { name:"Nagpur", sub:"Maharashtra · Central India", risk:"red", riskLabel:"Extreme Heat", level:96, levelText:"47°C", danger:"45°C", meta:["💧 Humidity 18%","🕐 48hr warning","⚡ First to alert"], stats:[{l:"Temperature",v:"47°C",c:"var(--red)",s:"Danger: 45°C"},{l:"Heat Index",v:"51°C",c:"var(--orange)",s:"Feels like"},{l:"Risk",v:"Extreme",c:"var(--red)",s:"Action needed"},{l:"Duration",v:"48 hrs",c:"var(--accent)",s:"Forecast"}] },
+  { name:"Chandrapur", sub:"Maharashtra · Vidarbha", risk:"red", riskLabel:"Extreme Heat", level:92, levelText:"46°C", danger:"45°C", meta:["💧 Humidity 15%","🕐 36hr warning","⚡ First to alert"], stats:[{l:"Temperature",v:"46°C",c:"var(--red)",s:"Danger: 45°C"},{l:"Heat Index",v:"49°C",c:"var(--orange)",s:"Feels like"},{l:"Risk",v:"Extreme",c:"var(--red)",s:"Action needed"},{l:"Duration",v:"36 hrs",c:"var(--accent)",s:"Forecast"}] },
+  { name:"Jhansi", sub:"Uttar Pradesh · Bundelkhand", risk:"orange", riskLabel:"High Heat", level:78, levelText:"44°C", danger:"45°C", meta:["💧 Humidity 20%","🕐 24hr warning","⚡ First to alert"], stats:[{l:"Temperature",v:"44°C",c:"var(--orange)",s:"Danger: 45°C"},{l:"Heat Index",v:"47°C",c:"var(--orange)",s:"Feels like"},{l:"Risk",v:"High",c:"var(--orange)",s:"Stay hydrated"},{l:"Duration",v:"24 hrs",c:"var(--accent)",s:"Forecast"}] },
+  { name:"Puri", sub:"Odisha · Coastal", risk:"yellow", riskLabel:"Watch", level:62, levelText:"41°C", danger:"45°C", meta:["💧 Humidity 55%","🕐 Monitoring","👁️ Watch"], stats:[{l:"Temperature",v:"41°C",c:"var(--yellow)",s:"Danger: 45°C"},{l:"Heat Index",v:"46°C",c:"var(--yellow)",s:"Feels like"},{l:"Risk",v:"Medium",c:"var(--yellow)",s:"High humidity"},{l:"Duration",v:"Watch",c:"var(--accent)",s:"Monitoring"}] },
+  { name:"Shimla", sub:"Himachal Pradesh · Hills", risk:"green", riskLabel:"Cool & Safe", level:18, levelText:"22°C", danger:"45°C", meta:["💧 Humidity 60%","✅ Normal temps","✅ Safe"], stats:[{l:"Temperature",v:"22°C",c:"var(--green)",s:"Danger: 45°C"},{l:"Heat Index",v:"23°C",c:"var(--green)",s:"Feels like"},{l:"Risk",v:"None",c:"var(--green)",s:"Normal"},{l:"Status",v:"Safe",c:"var(--green)",s:"No alert"}] },
+];
+
+const aqiData = [
+  { name:"Anand Vihar", sub:"Delhi · East Delhi", risk:"red", riskLabel:"Hazardous", level:97, levelText:"AQI 389", danger:"AQI 300", meta:["🏭 PM2.5: 280","👁️ 500m visibility","⚡ First to alert"], stats:[{l:"AQI",v:"389",c:"var(--red)",s:"Hazardous >300"},{l:"PM2.5",v:"280µg",c:"var(--red)",s:"Safe: <12µg"},{l:"PM10",v:"410µg",c:"var(--orange)",s:"Safe: <54µg"},{l:"Status",v:"First Alert",c:"var(--accent)",s:"Ahead of CPCB"}] },
+  { name:"Sector 62", sub:"Noida · Uttar Pradesh", risk:"red", riskLabel:"Very Unhealthy", level:88, levelText:"AQI 312", danger:"AQI 300", meta:["🏭 PM2.5: 210","👁️ 800m visibility","⚡ First to alert"], stats:[{l:"AQI",v:"312",c:"var(--red)",s:"Very Unhealthy"},{l:"PM2.5",v:"210µg",c:"var(--orange)",s:"Safe: <12µg"},{l:"PM10",v:"320µg",c:"var(--orange)",s:"Safe: <54µg"},{l:"Status",v:"First Alert",c:"var(--accent)",s:"Ahead of CPCB"}] },
+  { name:"Chembur", sub:"Mumbai · Maharashtra", risk:"purple", riskLabel:"Unhealthy", level:72, levelText:"AQI 218", danger:"AQI 300", meta:["🏭 PM2.5: 140","👁️ 2km visibility","⚡ First to alert"], stats:[{l:"AQI",v:"218",c:"var(--purple)",s:"Unhealthy >200"},{l:"PM2.5",v:"140µg",c:"var(--purple)",s:"Safe: <12µg"},{l:"PM10",v:"190µg",c:"var(--yellow)",s:"Safe: <54µg"},{l:"Status",v:"First Alert",c:"var(--accent)",s:"Monitoring"}] },
+  { name:"Koramangala", sub:"Bengaluru · Karnataka", risk:"green", riskLabel:"Good Air", level:22, levelText:"AQI 68", danger:"AQI 300", meta:["✅ PM2.5: 22","✅ Clear skies","✅ Safe"], stats:[{l:"AQI",v:"68",c:"var(--green)",s:"Good <100"},{l:"PM2.5",v:"22µg",c:"var(--green)",s:"Acceptable"},{l:"PM10",v:"45µg",c:"var(--green)",s:"Normal"},{l:"Status",v:"Safe",c:"var(--green)",s:"No alert"}] },
+];
+
+const rainData = [
+  { name:"Cherrapunji", sub:"Meghalaya · Northeast", risk:"red", riskLabel:"Extreme Rain", level:95, levelText:"312mm", danger:"200mm", meta:["⛰️ Landslide risk","🌊 Flash flood risk","⚡ First to alert"], stats:[{l:"Rainfall",v:"312mm",c:"var(--red)",s:"24hr total"},{l:"Forecast",v:"+180mm",c:"var(--red)",s:"Next 24hrs"},{l:"Risk",v:"Extreme",c:"var(--red)",s:"Landslides"},{l:"Status",v:"First Alert",c:"var(--accent)",s:"Ahead of IMD"}] },
+  { name:"Imphal", sub:"Manipur · Northeast", risk:"yellow", riskLabel:"Heavy Rain", level:68, levelText:"148mm", danger:"200mm", meta:["🌊 River watch","🏔️ Hill alert","👁️ Monitoring"], stats:[{l:"Rainfall",v:"148mm",c:"var(--yellow)",s:"24hr total"},{l:"Forecast",v:"+90mm",c:"var(--yellow)",s:"Next 24hrs"},{l:"Risk",v:"Moderate",c:"var(--yellow)",s:"Monitoring"},{l:"Status",v:"Watch",c:"var(--yellow)",s:"Monitoring"}] },
+  { name:"Patna", sub:"Bihar · Gangetic Plain", risk:"yellow", riskLabel:"Moderate Rain", level:55, levelText:"98mm", danger:"200mm", meta:["🌊 Ganga watch","🌧️ Steady rain","👁️ Monitoring"], stats:[{l:"Rainfall",v:"98mm",c:"var(--yellow)",s:"24hr total"},{l:"Forecast",v:"+60mm",c:"var(--yellow)",s:"Next 24hrs"},{l:"Risk",v:"Low-Med",c:"var(--yellow)",s:"Monitoring"},{l:"Status",v:"Watch",c:"var(--yellow)",s:"Normal"}] },
+  { name:"Jaisalmer", sub:"Rajasthan · Desert", risk:"green", riskLabel:"Dry & Clear", level:4, levelText:"2mm", danger:"200mm", meta:["☀️ Clear skies","🌵 No rain risk","✅ Safe"], stats:[{l:"Rainfall",v:"2mm",c:"var(--green)",s:"24hr total"},{l:"Forecast",v:"<5mm",c:"var(--green)",s:"Next 24hrs"},{l:"Risk",v:"None",c:"var(--green)",s:"Dry conditions"},{l:"Status",v:"Safe",c:"var(--green)",s:"No alert"}] },
+];
+
+// ─── RENDER CARDS ────────────────────────────────────────
+function renderCards(data, gridId) {
+  const grid = document.getElementById(gridId);
+  grid.innerHTML = '';
+  data.forEach((d, i) => {
+    const card = document.createElement('div');
+    card.className = `hazard-card ${d.risk}`;
+    card.style.animationDelay = `${i * 0.05}s`;
+    card.innerHTML = `
+      <div class="card-top">
+        <div>
+          <div class="card-name">${d.name}</div>
+          <div class="card-sub">${d.sub}</div>
+        </div>
+        <div class="risk-badge ${d.risk}">${d.riskLabel}</div>
+      </div>
+      <div class="level-label"><span>Level</span><span>${d.levelText} / ${d.danger}</span></div>
+      <div class="level-bar-bg">
+        <div class="level-bar-fill ${d.risk}" style="width:0%" data-target="${d.level}"></div>
+      </div>
+      <div class="card-meta">${d.meta.map(m => `<span>${m}</span>`).join('')}</div>
+    `;
+    card.addEventListener('click', () => openModal(d));
+    grid.appendChild(card);
+  });
+  setTimeout(() => {
+    grid.querySelectorAll('.level-bar-fill').forEach(b => b.style.width = b.dataset.target + '%');
+  }, 200);
+}
+
+// Render all grids
+renderCards(floodData, 'flood-grid');
+renderCards(heatData, 'heat-grid');
+renderCards(aqiData, 'aqi-grid');
+renderCards(rainData, 'rain-grid');
+renderCards([...floodData.filter(d=>d.risk==='red'), ...heatData.filter(d=>d.risk==='red'||d.risk==='orange'), ...aqiData.filter(d=>d.risk==='red'||d.risk==='purple')], 'all-grid');
+
+// ─── TABS ────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ─── MODAL ───────────────────────────────────────────────
+function openModal(d) {
+  document.getElementById('modal-title').textContent = d.name;
+  document.getElementById('modal-sub').textContent = d.sub;
+  document.getElementById('modal-stats').innerHTML = d.stats.map(s => `
+    <div class="modal-stat">
+      <div class="modal-stat-label">${s.l}</div>
+      <div class="modal-stat-value" style="color:${s.c}">${s.v}</div>
+      <div class="modal-vs">${s.s}</div>
+    </div>
+  `).join('');
+  document.getElementById('form-section').style.display = 'block';
+  document.getElementById('success-msg').classList.remove('active');
+  document.getElementById('inp-name').value = '';
+  document.getElementById('inp-phone').value = '';
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModalDirect();
+}
+
+function closeModalDirect() {
+  document.getElementById('modal-overlay').classList.remove('active');
+}
+
+function handleSignup() {
+  const name = document.getElementById('inp-name').value.trim();
+  const phone = document.getElementById('inp-phone').value.trim();
+  if (!name || !phone) { alert('Please enter your name and phone number.'); return; }
+  document.getElementById('form-section').style.display = 'none';
+  document.getElementById('success-msg').classList.add('active');
+}
+
+// ─── SEARCH ──────────────────────────────────────────────
+const locationDatabase = {
+  "delhi": { name:"Delhi, NCT", coords:"28.6139°N, 77.2090°E", hazards:[{type:"AQI 312",risk:"red"},{type:"Temp 38°C",risk:"yellow"},{type:"No Flood Risk",risk:"green"}] },
+  "mumbai": { name:"Mumbai, Maharashtra", coords:"19.0760°N, 72.8777°E", hazards:[{type:"AQI 218",risk:"purple"},{type:"Rainfall 88mm",risk:"yellow"},{type:"No Flood Risk",risk:"green"}] },
+  "patna": { name:"Patna, Bihar", coords:"25.5941°N, 85.1376°E", hazards:[{type:"Flood Watch",risk:"yellow"},{type:"Rainfall 98mm",risk:"yellow"},{type:"AQI 145 - Moderate",risk:"yellow"}] },
+  "kolkata": { name:"Kolkata, West Bengal", coords:"22.5726°N, 88.3639°E", hazards:[{type:"Flood Watch",risk:"yellow"},{type:"Rainfall 112mm",risk:"yellow"},{type:"AQI 180 - Moderate",risk:"yellow"}] },
+  "chennai": { name:"Chennai, Tamil Nadu", coords:"13.0827°N, 80.2707°E", hazards:[{type:"Cyclone Watch",risk:"yellow"},{type:"Rainfall 65mm",risk:"green"},{type:"AQI 88 - Good",risk:"green"}] },
+  "nagpur": { name:"Nagpur, Maharashtra", coords:"21.1458°N, 79.0882°E", hazards:[{type:"Heatwave 47°C",risk:"red"},{type:"AQI 98 - Good",risk:"green"},{type:"No Flood Risk",risk:"green"}] },
+  "supaul": { name:"Supaul, Bihar", coords:"26.1235°N, 86.6013°E", hazards:[{type:"FLOOD HIGH RISK",risk:"red"},{type:"Rainfall 187mm",risk:"red"},{type:"AQI 112 - Moderate",risk:"yellow"}] },
+  "guwahati": { name:"Guwahati, Assam", coords:"26.1445°N, 91.7362°E", hazards:[{type:"Flood Watch",risk:"yellow"},{type:"Rainfall 155mm",risk:"yellow"},{type:"AQI 95 - Good",risk:"green"}] },
+  "jaipur": { name:"Jaipur, Rajasthan", coords:"26.9124°N, 75.7873°E", hazards:[{type:"Heat 43°C",risk:"orange"},{type:"No Rain",risk:"green"},{type:"AQI 122 - Moderate",risk:"yellow"}] },
+  "bangalore": { name:"Bengaluru, Karnataka", coords:"12.9716°N, 77.5946°E", hazards:[{type:"AQI 68 - Good",risk:"green"},{type:"Light Rain 12mm",risk:"green"},{type:"Temp 28°C - Normal",risk:"green"}] },
+  "hyderabad": { name:"Hyderabad, Telangana", coords:"17.3850°N, 78.4867°E", hazards:[{type:"Heat 41°C",risk:"yellow"},{type:"AQI 105 - Moderate",risk:"yellow"},{type:"No Flood Risk",risk:"green"}] },
+  "bhubaneswar": { name:"Bhubaneswar, Odisha", coords:"20.2961°N, 85.8245°E", hazards:[{type:"Cyclone Watch",risk:"yellow"},{type:"Rainfall 78mm",risk:"yellow"},{type:"Heat 39°C",risk:"yellow"}] },
+};
+
+function doSearch() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  if (!q) return;
+  let found = null;
+  for (const key of Object.keys(locationDatabase)) {
+    if (q.includes(key) || key.includes(q)) { found = locationDatabase[key]; break; }
+  }
+  if (!found) {
+    found = {
+      name: document.getElementById('search-input').value.trim() + ", India",
+      coords: "Location detected",
+      hazards: [
+        {type:"No active flood alerts",risk:"green"},
+        {type:"AQI 95 - Good",risk:"green"},
+        {type:"Temp 32°C - Normal",risk:"green"}
+      ]
+    };
+  }
+  showLocationResult(found);
+}
+
+document.getElementById('search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+
+function useMyLocation() {
+  const btn = document.querySelector('.btn-location');
+  btn.textContent = '📡 Detecting...';
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        btn.textContent = '🎯 Use My Location';
+        const lat = pos.coords.latitude.toFixed(4);
+        const lng = pos.coords.longitude.toFixed(4);
+        showLocationResult({
+          name: "Your Current Location",
+          coords: `${lat}°N, ${lng}°E`,
+          hazards: [
+            {type:"Checking flood risk...",risk:"yellow"},
+            {type:"AQI: Fetching...",risk:"yellow"},
+            {type:"Temperature: Fetching...",risk:"yellow"}
+          ]
+        });
+        // Simulate data loading
+        setTimeout(() => {
+          showLocationResult({
+            name: "Your Current Location",
+            coords: `${lat}°N, ${lng}°E`,
+            hazards: [
+              {type:"No active flood alerts",risk:"green"},
+              {type:"AQI 102 - Moderate",risk:"yellow"},
+              {type:"Temp 31°C - Normal",risk:"green"}
+            ]
+          });
+        }, 1500);
+      },
+      err => {
+        btn.textContent = '🎯 Use My Location';
+        showLocationResult({
+          name: "Location access denied",
+          coords: "Please allow location access or search manually",
+          hazards: [{type:"Search your area above",risk:"yellow"}]
+        });
+      }
+    );
+  } else {
+    btn.textContent = '🎯 Use My Location';
+    alert('Location not supported on this browser. Please search manually.');
+  }
+}
+
+function showLocationResult(data) {
+  document.getElementById('loc-name').textContent = data.name;
+  document.getElementById('loc-coords').textContent = data.coords;
+  const hazardsEl = document.getElementById('loc-hazards');
+  hazardsEl.innerHTML = data.hazards.map(h =>
+    `<div class="hazard-pill ${h.risk}">${h.type}</div>`
+  ).join('');
+  const hasRed = data.hazards.some(h => h.risk === 'red');
+  const hasOrange = data.hazards.some(h => h.risk === 'orange' || h.risk === 'purple');
+  const hasYellow = data.hazards.some(h => h.risk === 'yellow');
+  document.getElementById('loc-overall-badge').innerHTML =
+    hasRed ? `<div class="risk-badge red">High Risk</div>` :
+    hasOrange ? `<div class="risk-badge orange">Moderate Risk</div>` :
+    hasYellow ? `<div class="risk-badge yellow">Watch</div>` :
+    `<div class="risk-badge green">Safe</div>`;
+  document.getElementById('location-result').classList.add('active');
+  document.getElementById('location-result').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+</script>
+</body>
+</html>
