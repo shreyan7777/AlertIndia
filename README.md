@@ -119,7 +119,7 @@ Google Apps Script Web App (doGet / doPost)
 |---|---|
 | Dibyo Shankha Mukherjee | Frontend Lead & Master Integrator |
 | Shreyan Chowdhury | Backend & GitHub Specialist |
-| Koustab Paul | API Integration Specialist |
+| Koustav Paul | Alert Engine Logic & API Integration Specialist |
 | Soham Bhattacharya | UI/UX & Testing |
 
 ---
